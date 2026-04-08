@@ -328,7 +328,7 @@ const baseReducer = (state: AppState, action: Action): AppState => {
     case 'GO_BACK': {
       switch (state.matchState) {
         case 'toss':
-          return { ...initialState, past: [] };
+          return { ...state, matchState: 'setup', toss: { wonBy: null, electedTo: null } };
         case 'innings1_setup':
           return { ...state, matchState: 'toss', innings1: null, toss: { wonBy: null, electedTo: null } };
         case 'innings1': {

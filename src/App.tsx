@@ -5,6 +5,7 @@
 
 import React, { useEffect, useReducer, useRef, useState, useCallback } from 'react';
 import { initialState, reducer } from './store';
+import { Player } from './types';
 import HomeScreen from './components/HomeScreen';
 import SetupScreen from './components/SetupScreen';
 import TossScreen from './components/TossScreen';
@@ -23,6 +24,8 @@ import { supabase, generateMatchId, syncLiveMatch, removeLiveMatch, saveComplete
 
 type Page = 'home' | 'match' | 'history' | 'stats' | 'players' | 'tournaments' | 'tournament-detail';
 
+type Squad = { players: Player[]; captainId: string | null };
+
 // Parse hash route
 function parseHash(hash: string): { mode: 'live' | 'match' | null; matchId: string | null } {
   const liveMatch = hash.match(/#\/live\/([A-Z0-9]+)/i);
@@ -38,7 +41,7 @@ function MainApp() {
   const [matchId, setMatchId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTournament, setActiveTournament] = useState<Tournament | null>(null);
-  const [tournamentMatchContext, setTournamentMatchContext] = useState<{ tournamentId: string; team1: string; team2: string } | null>(null);
+  const [tournamentMatchContext, setTournamentMatchContext] = useState<{ tournamentId: string; team1: string; team2: string; prevSquad1?: Squad | null; prevSquad2?: Squad | null; autoTossTeam?: string | null } | null>(null);
 
   const prevMatchState = useRef(state.matchState);
 
@@ -99,6 +102,13 @@ function MainApp() {
           team2_overs: t1First ? toOvers(inn2.balls) : toOvers(inn1.balls),
           winner,
         });
+
+        // Save squads for carry-forward in next tournament match
+        const { tournamentId, team1: t1Name, team2: t2Name } = tournamentMatchContext;
+        const teamA = state.teams.find(t => t.name === t1Name);
+        const teamB = state.teams.find(t => t.name === t2Name);
+        if (teamA) localStorage.setItem(`squad_${tournamentId}_${t1Name}`, JSON.stringify({ players: teamA.players, captainId: teamA.captainId ?? null }));
+        if (teamB) localStorage.setItem(`squad_${tournamentId}_${t2Name}`, JSON.stringify({ players: teamB.players, captainId: teamB.captainId ?? null }));
       }
     }
 
@@ -113,6 +123,17 @@ function MainApp() {
 
     prevMatchState.current = state.matchState;
   }, [state, loading, matchId]);
+
+  // Auto-toss: when tournament context has a winner-bats-first team, skip the toss screen.
+  // Clear autoTossTeam after firing so pressing back shows the normal toss screen.
+  useEffect(() => {
+    if (state.matchState !== 'toss' || !tournamentMatchContext?.autoTossTeam) return;
+    const autoTeam = state.teams.find(t => t.name === tournamentMatchContext.autoTossTeam);
+    if (autoTeam) {
+      dispatch({ type: 'RECORD_TOSS', wonBy: autoTeam.id, electedTo: 'bat' });
+      setTournamentMatchContext(prev => prev ? { ...prev, autoTossTeam: null } : null);
+    }
+  }, [state.matchState]);
 
   // When match resets (from result/scoring via quit), go back to home or tournament
   const intentionalSetup = useRef(false);
@@ -139,8 +160,13 @@ function MainApp() {
     setPage('match');
   }, [matchId]);
 
-  const handleStartTournamentMatch = useCallback((tournament: Tournament, team1: string, team2: string) => {
-    setTournamentMatchContext({ tournamentId: tournament.id, team1, team2 });
+  const handleStartTournamentMatch = useCallback((tournament: Tournament, team1: string, team2: string, autoTossTeam?: string) => {
+    const loadSquad = (teamName: string): Squad | null => {
+      const raw = localStorage.getItem(`squad_${tournament.id}_${teamName}`);
+      if (!raw) return null;
+      try { return JSON.parse(raw) as Squad; } catch { return null; }
+    };
+    setTournamentMatchContext({ tournamentId: tournament.id, team1, team2, prevSquad1: loadSquad(team1), prevSquad2: loadSquad(team2), autoTossTeam: autoTossTeam ?? null });
     intentionalSetup.current = true;
     if (matchId) removeLiveMatch(matchId);
     setMatchId(null);
@@ -211,7 +237,7 @@ function MainApp() {
       <TournamentDetailScreen
         tournament={activeTournament}
         onBack={() => setPage('tournaments')}
-        onStartMatch={(team1, team2) => handleStartTournamentMatch(activeTournament, team1, team2)}
+        onStartMatch={(team1, team2, autoTossTeam) => handleStartTournamentMatch(activeTournament, team1, team2, autoTossTeam)}
       />
     );
   }
@@ -219,11 +245,20 @@ function MainApp() {
   // Match flow
   const renderScreen = () => {
     switch (state.matchState) {
-      case 'setup':
+      case 'setup': {
+        // If we came back from toss (teams already set), restore them; otherwise use tournament prev squad
+        const backSquad1 = state.teams[0] ? { players: state.teams[0].players, captainId: state.teams[0].captainId ?? null } : null;
+        const backSquad2 = state.teams[1] ? { players: state.teams[1].players, captainId: state.teams[1].captainId ?? null } : null;
         return <SetupScreen dispatch={dispatch} onBack={() => {
           if (tournamentMatchContext) { setPage('tournament-detail'); setTournamentMatchContext(null); }
           else setPage('home');
-        }} defaultTeam1={tournamentMatchContext?.team1} defaultTeam2={tournamentMatchContext?.team2} />;
+        }}
+          defaultTeam1={state.teams[0]?.name ?? tournamentMatchContext?.team1}
+          defaultTeam2={state.teams[1]?.name ?? tournamentMatchContext?.team2}
+          defaultTeam1Squad={backSquad1 ?? tournamentMatchContext?.prevSquad1}
+          defaultTeam2Squad={backSquad2 ?? tournamentMatchContext?.prevSquad2}
+        />;
+      }
       case 'toss':
         return <TossScreen state={state} dispatch={dispatch} />;
       case 'innings1_setup':

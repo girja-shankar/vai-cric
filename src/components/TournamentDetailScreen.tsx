@@ -8,7 +8,7 @@ import {
   addTournamentMatch, deleteTournamentMatch, updateTournamentStatus,
 } from '../lib/supabase';
 
-type Props = { tournament: Tournament; onBack: () => void; onStartMatch: (team1: string, team2: string) => void };
+type Props = { tournament: Tournament; onBack: () => void; onStartMatch: (team1: string, team2: string, autoTossTeam?: string) => void };
 type SubTab = 'points' | 'matches';
 
 type TeamRow = {
@@ -168,6 +168,7 @@ export default function TournamentDetailScreen({ tournament, onBack, onStartMatc
   const [pickerTeam2, setPickerTeam2] = useState('');
   const [status, setStatus] = useState<Tournament['status']>(tournament.status);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [winnerBatsFirst, setWinnerBatsFirst] = useState(true);
 
   const reload = useCallback(async () => {
     const [t, m] = await Promise.all([fetchTournamentTeams(tournament.id), fetchTournamentMatches(tournament.id)]);
@@ -190,6 +191,12 @@ export default function TournamentDetailScreen({ tournament, onBack, onStartMatc
   };
 
   const table = buildPointsTable(teams, matches);
+
+  // Most recent completed match winner (excluding ties)
+  const lastMatchWinner = matches.length > 0
+    ? [...matches].sort((a, b) => new Date(b.played_at).getTime() - new Date(a.played_at).getTime())[0].winner
+    : null;
+  const lastWinnerName = lastMatchWinner && lastMatchWinner !== 'tie' ? lastMatchWinner : null;
 
   const nrrStr = (n: number) => (n >= 0 ? '+' : '') + n.toFixed(3);
 
@@ -374,10 +381,26 @@ export default function TournamentDetailScreen({ tournament, onBack, onStartMatc
       {/* FAB – Start Match */}
       {status === 'active' && (
         <div className="shrink-0 p-3 border-t border-slate-100 bg-white space-y-2">
+          {/* Winner bats first toggle — only shown when there's a known previous winner */}
+          {lastWinnerName && (
+            <div className="flex items-center gap-3 px-1 py-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-slate-700">Winner bats first</p>
+                <p className="text-[10px] text-slate-400 truncate">Last winner: <span className="font-medium text-indigo-600">{lastWinnerName}</span></p>
+              </div>
+              <button
+                onClick={() => setWinnerBatsFirst(v => !v)}
+                className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${winnerBatsFirst ? 'bg-indigo-600' : 'bg-slate-300'}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${winnerBatsFirst ? 'translate-x-4' : ''}`} />
+              </button>
+            </div>
+          )}
           <button
             onClick={() => {
+              const autoToss = winnerBatsFirst && lastWinnerName ? lastWinnerName : undefined;
               if (teams.length === 2) {
-                onStartMatch(teams[0].team_name, teams[1].team_name);
+                onStartMatch(teams[0].team_name, teams[1].team_name, autoToss);
               } else {
                 setPickerTeam1(teams[0]?.team_name ?? '');
                 setPickerTeam2(teams[1]?.team_name ?? '');
@@ -422,7 +445,7 @@ export default function TournamentDetailScreen({ tournament, onBack, onStartMatc
             })}
             <button
               disabled={!pickerTeam1 || !pickerTeam2 || pickerTeam1 === pickerTeam2}
-              onClick={() => { setShowMatchPicker(false); onStartMatch(pickerTeam1, pickerTeam2); }}
+              onClick={() => { setShowMatchPicker(false); onStartMatch(pickerTeam1, pickerTeam2, winnerBatsFirst && lastWinnerName ? lastWinnerName : undefined); }}
               className="w-full py-3 bg-indigo-600 text-white rounded-2xl font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2">
               <Trophy className="w-4 h-4" /> Start Match
             </button>

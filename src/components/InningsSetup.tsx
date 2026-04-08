@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AppState } from '../types';
 import { Action } from '../store';
-import { Users, Play, Zap, Shield, CircleDot, ArrowLeft } from 'lucide-react';
+import { Users, Play, Zap, Shield, CircleDot, ArrowLeft, Settings, X, Check } from 'lucide-react';
 
 export default function InningsSetup({ state, dispatch }: { state: AppState; dispatch: React.Dispatch<Action> }) {
   const isFirstInnings = state.matchState === 'innings1_setup';
@@ -13,6 +13,8 @@ export default function InningsSetup({ state, dispatch }: { state: AppState; dis
   const [strikerId, setStrikerId] = useState<string>('');
   const [nonStrikerId, setNonStrikerId] = useState<string>('');
   const [bowlerId, setBowlerId] = useState<string>('');
+  const [editingOvers, setEditingOvers] = useState(false);
+  const [oversInput, setOversInput] = useState(state.overs);
 
   const handleStart = () => {
     if (strikerId && nonStrikerId && bowlerId && strikerId !== nonStrikerId) {
@@ -33,11 +35,55 @@ export default function InningsSetup({ state, dispatch }: { state: AppState; dis
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
+        <button
+          onClick={() => { setOversInput(state.overs); setEditingOvers(true); }}
+          className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full transition-colors flex items-center gap-1"
+        >
+          <Settings className="w-4 h-4" />
+          <span className="text-xs font-semibold">{state.overs}ov</span>
+        </button>
         <h1 className="text-xl font-bold tracking-tight mb-0.5">
           {isFirstInnings ? '1st Innings' : '2nd Innings'}
         </h1>
         <p className="text-indigo-200 text-xs">Tap to select opening players</p>
       </div>
+
+      {/* Overs editor modal */}
+      {editingOvers && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm" onClick={() => setEditingOvers(false)}>
+          <div className="bg-white w-full max-w-md rounded-t-3xl p-5 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="font-black text-slate-800">Change Overs</h2>
+              <button onClick={() => setEditingOvers(false)}><X className="w-5 h-5 text-slate-400" /></button>
+            </div>
+            <div className="flex items-center gap-4 justify-center">
+              <button
+                onClick={() => setOversInput(v => Math.max(1, v - 1))}
+                className="w-12 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xl flex items-center justify-center active:scale-95"
+              >−</button>
+              <span className="text-4xl font-black text-slate-800 w-12 text-center">{oversInput}</span>
+              <button
+                onClick={() => setOversInput(v => Math.min(20, v + 1))}
+                className="w-12 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xl flex items-center justify-center active:scale-95"
+              >+</button>
+            </div>
+            <div className="flex gap-2 justify-center">
+              {[1,2,3,4,5,6,7,8,9,10].map(v => (
+                <button key={v} onClick={() => setOversInput(v)}
+                  className={`flex-1 py-1.5 rounded-lg text-sm font-semibold transition-all ${oversInput === v ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  {v}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => { dispatch({ type: 'UPDATE_MATCH_SETTINGS', teams: state.teams, overs: oversInput }); setEditingOvers(false); }}
+              className="w-full py-3 bg-indigo-600 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
+            >
+              <Check className="w-4 h-4" /> Apply
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex-grow p-3 flex flex-col min-h-0 overflow-y-auto gap-3">
         {/* Striker */}

@@ -14,19 +14,38 @@ const getDefaultOvers = (playerCount: number): number => {
 
 type Tab = 'settings' | 'team1' | 'team2';
 
-export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTeam2 }: { dispatch: React.Dispatch<Action>; onBack?: () => void; defaultTeam1?: string; defaultTeam2?: string }) {
+type Squad = { players: Player[]; captainId: string | null };
+
+/** Detect a player appearing in both squads (the common player), extract them out. */
+function extractCommonPlayer(s1?: Squad | null, s2?: Squad | null) {
+  const p1 = s1?.players ?? [];
+  const p2 = s2?.players ?? [];
+  const p2Names = new Set(p2.map(p => p.name));
+  const commonName = p1.find(p => p2Names.has(p.name))?.name ?? null;
+  return {
+    t1: commonName ? p1.filter(p => p.name !== commonName) : p1,
+    t2: commonName ? p2.filter(p => p.name !== commonName) : p2,
+    common: commonName ? { id: `cp-${Date.now()}`, name: commonName } : null,
+  };
+}
+
+export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTeam2, defaultTeam1Squad, defaultTeam2Squad }: { dispatch: React.Dispatch<Action>; onBack?: () => void; defaultTeam1?: string; defaultTeam2?: string; defaultTeam1Squad?: Squad | null; defaultTeam2Squad?: Squad | null }) {
+  const [initSquad] = useState(() => extractCommonPlayer(defaultTeam1Squad, defaultTeam2Squad));
+
   const [team1Name, setTeam1Name] = useState(defaultTeam1 ?? 'Team A');
   const [team2Name, setTeam2Name] = useState(defaultTeam2 ?? 'Team B');
 
-  const [team1Players, setTeam1Players] = useState<Player[]>([]);
-  const [team2Players, setTeam2Players] = useState<Player[]>([]);
+  const [team1Players, setTeam1Players] = useState<Player[]>(initSquad.t1);
+  const [team2Players, setTeam2Players] = useState<Player[]>(initSquad.t2);
+  const [team1FromPrev, setTeam1FromPrev] = useState(!!(defaultTeam1Squad?.players?.length));
+  const [team2FromPrev, setTeam2FromPrev] = useState(!!(defaultTeam2Squad?.players?.length));
 
-  const [commonPlayer, setCommonPlayer] = useState<Player | null>(null);
+  const [commonPlayer, setCommonPlayer] = useState<Player | null>(initSquad.common);
 
-  const [overs, setOvers] = useState(getDefaultOvers(0));
+  const [overs, setOvers] = useState(getDefaultOvers(initSquad.t1.length));
   const [oversManuallySet, setOversManuallySet] = useState(false);
-  const [team1CaptainId, setTeam1CaptainId] = useState<string | null>(null);
-  const [team2CaptainId, setTeam2CaptainId] = useState<string | null>(null);
+  const [team1CaptainId, setTeam1CaptainId] = useState<string | null>(defaultTeam1Squad?.captainId ?? null);
+  const [team2CaptainId, setTeam2CaptainId] = useState<string | null>(defaultTeam2Squad?.captainId ?? null);
 
   const [activeTab, setActiveTab] = useState<Tab>('settings');
   const [registeredPlayers, setRegisteredPlayers] = useState<RegisteredPlayer[]>([]);
@@ -339,10 +358,21 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
         {/* Team 1 Tab */}
         {activeTab === 'team1' && (
           <div className="flex flex-col flex-grow min-h-0 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between mb-3 shrink-0">
+            <div className="flex items-center justify-between mb-2 shrink-0">
               <h2 className="text-sm font-bold text-slate-800">{team1Name} Roster</h2>
               <span className="text-xs font-medium text-slate-400">{filledTeam1} players</span>
             </div>
+            {team1FromPrev && (
+              <div className="flex items-center gap-2 mb-2 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1.5 shrink-0">
+                <span className="text-[10px] text-indigo-600 font-semibold flex-1">Squad carried from previous match</span>
+                <button
+                  onClick={() => { setTeam1Players([]); setTeam1CaptainId(null); setTeam1FromPrev(false); }}
+                  className="text-[10px] font-bold text-rose-500 hover:text-rose-700 shrink-0"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
             {renderPlayerList(team1Players, 1)}
           </div>
         )}
@@ -350,10 +380,21 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
         {/* Team 2 Tab */}
         {activeTab === 'team2' && (
           <div className="flex flex-col flex-grow min-h-0 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between mb-3 shrink-0">
+            <div className="flex items-center justify-between mb-2 shrink-0">
               <h2 className="text-sm font-bold text-slate-800">{team2Name} Roster</h2>
               <span className="text-xs font-medium text-slate-400">{filledTeam2} players</span>
             </div>
+            {team2FromPrev && (
+              <div className="flex items-center gap-2 mb-2 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1.5 shrink-0">
+                <span className="text-[10px] text-indigo-600 font-semibold flex-1">Squad carried from previous match</span>
+                <button
+                  onClick={() => { setTeam2Players([]); setTeam2CaptainId(null); setTeam2FromPrev(false); }}
+                  className="text-[10px] font-bold text-rose-500 hover:text-rose-700 shrink-0"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
             {renderPlayerList(team2Players, 2)}
           </div>
         )}

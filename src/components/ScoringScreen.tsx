@@ -309,8 +309,8 @@ export default function ScoringScreen({ state, dispatch, matchId }: { state: App
         </div>
 
         {/* Controls */}
-        <div className="grid grid-cols-5 gap-1.5 shrink-0">
-          {[0, 1, 2, 4, 6].map(runs => {
+        <div className="grid grid-cols-6 gap-1.5 shrink-0">
+          {[0, 1, 2, 3, 4, 6].map(runs => {
             const id = `normal-${runs}`;
             const isFlashing = flashId === id;
             return (
