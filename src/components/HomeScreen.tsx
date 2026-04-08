@@ -92,7 +92,7 @@ export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, 
               <Trophy className="w-7 h-7 text-amber-300" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight">Office Cricket</h1>
+              <h1 className="text-2xl font-black tracking-tight">VAI Cricket</h1>
               <p className="text-indigo-200 text-xs font-medium">Score Calculator & Stats</p>
             </div>
           </div>
