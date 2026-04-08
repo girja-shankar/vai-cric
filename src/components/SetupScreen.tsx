@@ -145,7 +145,7 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
                 return (
                   <div key={p.id} className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 ${isCaptain ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-100'}`}>
                     <span className="text-[10px] font-mono text-slate-400 w-4 text-right shrink-0">{i + 1}</span>
-                    <span className={`flex-1 text-xs font-semibold truncate ${isCaptain ? 'text-amber-800' : 'text-slate-800'}`}>{p.name}</span>
+                    <span className={`flex-1 text-base font-semibold truncate ${isCaptain ? 'text-amber-800' : 'text-slate-800'}`}>{p.name}</span>
                     {isCaptain && <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-1 rounded">C</span>}
                     <button
                       onClick={() => setCaptainId(isCaptain ? null : p.id)}
@@ -189,7 +189,7 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
                 <button
                   key={rp.id}
                   onClick={() => addRegisteredToTeam(team, rp.name)}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all active:scale-95 border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                  className="px-3 py-2 rounded-lg text-base font-semibold transition-all active:scale-95 border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
                 >
                   + {rp.name}
                 </button>
@@ -221,7 +221,7 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-1 rounded-lg text-base font-semibold transition-all ${
                 activeTab === tab.key
                   ? 'bg-white text-indigo-700 shadow-sm'
                   : 'text-indigo-200 hover:text-white hover:bg-indigo-600/50'
