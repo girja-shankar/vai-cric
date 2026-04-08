@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(lsof -ti:3000,3001,3002,5173)",
+      "Bash(xargs kill:*)",
+      "mcp__mcp-registry__search_mcp_registry",
+      "Bash(npm install:*)",
+      "Bash(ipconfig getifaddr:*)",
+      "mcp__plugin_context-mode_context-mode__ctx_search",
+      "Bash(where npm:*)",
+      "mcp__plugin_context-mode_context-mode__ctx_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_execute_file"
+    ]
+  }
+}
