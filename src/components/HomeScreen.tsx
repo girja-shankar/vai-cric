@@ -129,7 +129,62 @@ export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, 
       </div>
 
       {/* Content */}
-      <div className="flex-grow p-4 -mt-5 flex flex-col gap-3 overflow-y-auto min-h-0">
+      <div className="flex-grow p-4 -mt-5 flex flex-col gap-3 overflow-y-auto min-h-0 pb-6">
+        {/* Live Matches — shown first so always visible */}
+        {liveMatches.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden">
+            <div className="flex items-center gap-2 p-3 pb-2">
+              <Radio className="w-3.5 h-3.5 text-rose-500" />
+              <h3 className="font-bold text-sm text-slate-800">Live Matches</h3>
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            </div>
+            <div className="divide-y divide-slate-50">
+              {liveMatches.map(m => {
+                const summary = getLiveMatchSummary(m.state);
+                if (!summary) return null;
+                const isCurrentMatch = m.id === currentMatchId;
+                return (
+                  <div key={m.id} className="px-3 py-2.5">
+                    <div className="flex justify-between items-start mb-1.5">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="font-bold text-slate-700">{summary.team1Name}</span>
+                          <span className="text-slate-400">vs</span>
+                          <span className="font-bold text-slate-700">{summary.team2Name}</span>
+                        </div>
+                        {summary.battingTeam && (
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs font-mono font-bold text-indigo-600">{summary.score}</span>
+                            <span className="text-[10px] text-slate-400">({summary.overs} ov)</span>
+                            <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full font-semibold">
+                              {getMatchStateLabel(summary.matchState)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[9px] font-mono text-slate-300 shrink-0">#{m.id}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      {isCurrentMatch ? (
+                        <button onClick={onResumeMatch} className="flex-1 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors">
+                          <Wifi className="w-3 h-3" /> Resume Scoring
+                        </button>
+                      ) : (
+                        <button onClick={() => onResumeMatchById(m.id)} className="flex-1 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors">
+                          <Wifi className="w-3 h-3" /> Resume as Umpire
+                        </button>
+                      )}
+                      <button onClick={() => { window.location.hash = `#/live/${m.id}`; }} className="flex-1 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors">
+                        <Eye className="w-3 h-3" /> View Live
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Navigation Cards */}
         <div className="grid grid-cols-2 gap-2">
           <button
@@ -177,71 +232,6 @@ export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, 
           </button>
         </div>
 
-        {/* Live Matches */}
-        {liveMatches.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="flex items-center gap-2 p-3 pb-2">
-              <Radio className="w-3.5 h-3.5 text-rose-500" />
-              <h3 className="font-bold text-sm text-slate-800">Live Matches</h3>
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-            </div>
-
-            <div className="divide-y divide-slate-50">
-              {liveMatches.map(m => {
-                const summary = getLiveMatchSummary(m.state);
-                if (!summary) return null;
-                const isCurrentMatch = m.id === currentMatchId;
-                return (
-                  <div key={m.id} className="px-3 py-2.5">
-                    <div className="flex justify-between items-start mb-1.5">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="font-bold text-slate-700">{summary.team1Name}</span>
-                          <span className="text-slate-400">vs</span>
-                          <span className="font-bold text-slate-700">{summary.team2Name}</span>
-                        </div>
-                        {summary.battingTeam && (
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-xs font-mono font-bold text-indigo-600">{summary.score}</span>
-                            <span className="text-[10px] text-slate-400">({summary.overs} ov)</span>
-                            <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full font-semibold">
-                              {getMatchStateLabel(summary.matchState)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-[9px] font-mono text-slate-300 shrink-0">#{m.id}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      {isCurrentMatch ? (
-                        <button
-                          onClick={onResumeMatch}
-                          className="flex-1 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors"
-                        >
-                          <Wifi className="w-3 h-3" /> Resume Scoring
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => onResumeMatchById(m.id)}
-                          className="flex-1 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors"
-                        >
-                          <Wifi className="w-3 h-3" /> Resume as Umpire
-                        </button>
-                      )}
-                      <button
-                        onClick={() => { window.location.hash = `#/live/${m.id}`; }}
-                        className="flex-1 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors"
-                      >
-                        <Eye className="w-3 h-3" /> View Live
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* Recent Matches */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="flex items-center justify-between p-3 pb-2">
@@ -265,7 +255,7 @@ export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, 
             </div>
           ) : (
             <div className="divide-y divide-slate-50">
-              {recentMatches.map(m => (
+              {recentMatches.slice(0, 3).map(m => (
                 <div key={m.id} className="px-3 py-2.5">
                   <div className="flex justify-between items-center">
                     <div className="flex-1 min-w-0">
