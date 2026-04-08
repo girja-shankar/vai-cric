@@ -89,6 +89,7 @@ export default function ScoringScreen({ state, dispatch, matchId }: { state: App
   // Wicket state
   const [outBatsmanId, setOutBatsmanId] = useState<string>(innings.strikerId || '');
   const [outType, setOutType] = useState<'out' | 'retiredOut'>('out');
+  const [dismissalType, setDismissalType] = useState<'caught' | 'bowled' | 'runOut' | 'stumped' | 'other'>('caught');
   const [wicketRuns, setWicketRuns] = useState<number>(0);
   const [nextBatsmanId, setNextBatsmanId] = useState<string>('');
   const [forcedNextStrikerId, setForcedNextStrikerId] = useState<string>('');
@@ -150,6 +151,7 @@ export default function ScoringScreen({ state, dispatch, matchId }: { state: App
           outType,
           nextBatsmanId: nextBatsmanId || null,
           forcedNextStrikerId: forcedNextStrikerId || undefined,
+          dismissalType,
         }
       });
       setShowWicketModal(false);
@@ -345,21 +347,35 @@ export default function ScoringScreen({ state, dispatch, matchId }: { state: App
             {flashId === 'noBall-0' && <span className="absolute inset-0 bg-amber-400/20 animate-ping rounded-xl" />}
             NB
           </button>
-          <button
-            onClick={() => {
-              triggerFeedback('out');
-              setOutBatsmanId(innings.strikerId!);
-              setOutType('out');
-              setWicketRuns(0);
-              setNextBatsmanId('');
-              setForcedNextStrikerId('');
-              setShowWicketModal(true);
-            }}
-            className={`py-2 flex items-center justify-center rounded-xl font-bold text-xs text-white bg-rose-500 shadow-sm shadow-rose-200 active:scale-90 relative overflow-hidden ${flashId === 'out' ? 'ring-4 ring-rose-300 scale-95' : ''}`}
-          >
-            {flashId === 'out' && <span className="absolute inset-0 bg-white/30 animate-ping rounded-xl" />}
-            OUT
-          </button>
+        </div>
+
+        {/* Dismissal buttons */}
+        <div className="grid grid-cols-5 gap-1.5 shrink-0">
+          {([
+            { label: 'Caught', type: 'caught' as const },
+            { label: 'Bowled', type: 'bowled' as const },
+            { label: 'Run Out', type: 'runOut' as const },
+            { label: 'Stumped', type: 'stumped' as const },
+            { label: 'Ret. Out', type: 'other' as const },
+          ]).map(({ label, type }) => (
+            <button
+              key={type}
+              onClick={() => {
+                triggerFeedback(type);
+                setOutBatsmanId(innings.strikerId!);
+                setOutType(type === 'other' ? 'retiredOut' : 'out');
+                setDismissalType(type);
+                setWicketRuns(0);
+                setNextBatsmanId('');
+                setForcedNextStrikerId('');
+                setShowWicketModal(true);
+              }}
+              className={`py-2 flex items-center justify-center rounded-xl font-bold text-[10px] text-white bg-rose-500 shadow-sm shadow-rose-200 active:scale-90 relative overflow-hidden ${flashId === type ? 'ring-4 ring-rose-300 scale-95' : ''}`}
+            >
+              {flashId === type && <span className="absolute inset-0 bg-white/30 animate-ping rounded-xl" />}
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -436,7 +452,9 @@ export default function ScoringScreen({ state, dispatch, matchId }: { state: App
               <div className="w-7 h-7 rounded-full bg-rose-100 flex items-center justify-center">
                 <AlertCircle className="w-4 h-4 text-rose-600" />
               </div>
-              <h3 className="text-sm font-bold text-slate-800">Wicket!</h3>
+              <h3 className="text-sm font-bold text-slate-800">
+                {dismissalType === 'caught' ? 'Caught Out' : dismissalType === 'bowled' ? 'Bowled' : dismissalType === 'runOut' ? 'Run Out' : dismissalType === 'stumped' ? 'Stumped' : 'Retired Out'}
+              </h3>
             </div>
 
             <div className="space-y-3">
@@ -460,42 +478,33 @@ export default function ScoringScreen({ state, dispatch, matchId }: { state: App
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Dismissal Type</label>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <button
-                    onClick={() => setOutType('out')}
-                    className={`py-2 px-2 rounded-lg text-xs font-semibold border-2 ${outType === 'out' ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-200 text-slate-600'}`}
-                  >
-                    Out
-                  </button>
-                  <button
-                    onClick={() => setOutType('retiredOut')}
-                    className={`py-2 px-2 rounded-lg text-xs font-semibold border-2 ${outType === 'retiredOut' ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-200 text-slate-600'}`}
-                  >
-                    Retired Out
-                  </button>
-                </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-slate-600">
+                  {dismissalType === 'caught' ? 'Caught Out' : dismissalType === 'bowled' ? 'Bowled' : dismissalType === 'runOut' ? 'Run Out' : dismissalType === 'stumped' ? 'Stumped' : 'Retired Out'}
+                </span>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Runs completed</label>
-                <div className="flex gap-1.5">
-                  {[0, 1, 2].map(r => (
-                    <button
-                      key={r}
-                      onClick={() => setWicketRuns(r)}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${
-                        wicketRuns === r ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600'
-                      }`}
-                    >
-                      {r}
-                    </button>
-                  ))}
+              {dismissalType === 'runOut' && (
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Runs completed</label>
+                  <div className="flex gap-1.5">
+                    {[0, 1, 2].map(r => (
+                      <button
+                        key={r}
+                        onClick={() => setWicketRuns(r)}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${
+                          wicketRuns === r ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[9px] text-slate-400 mt-0.5">Runs before dismissal (e.g. run out on 2nd run)</p>
                 </div>
-                <p className="text-[9px] text-slate-400 mt-0.5">Runs before dismissal (e.g. run out on 2nd run)</p>
-              </div>
+              )}
 
+              {/* Next Batsman */}
               {availableBatters.length > 0 ? (
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-600 mb-1">Next Batsman</label>
@@ -504,59 +513,54 @@ export default function ScoringScreen({ state, dispatch, matchId }: { state: App
                     onChange={e => setNextBatsmanId(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 focus:ring-2 focus:ring-rose-500 outline-none"
                   >
-                    <option value="" disabled>Select Next Batsman</option>
+                    <option value="">Select Next Batsman</option>
                     {availableBatters.map(p => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
                 </div>
-              ) : nonStriker ? (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-center">
-                  <p className="text-xs font-semibold text-amber-700">Last man standing</p>
-                  <p className="text-[10px] text-amber-600 mt-0.5">Remaining batsman will continue alone</p>
-                </div>
-              ) : (
+              ) : !nonStriker ? (
                 <div className="bg-rose-50 border border-rose-200 rounded-lg p-2 text-center">
                   <p className="text-xs font-semibold text-rose-700">All Out!</p>
                   <p className="text-[10px] text-rose-600 mt-0.5">This will end the innings</p>
                 </div>
-              )}
-            </div>
+              ) : null}
 
-            {/* Who faces next? — shown when two batsmen remain */}
-            {outType !== 'retiredOut' && (() => {
-              const remainingIds = outBatsmanId === innings.strikerId
-                ? [innings.nonStrikerId, nextBatsmanId].filter((id): id is string => !!id)
-                : [innings.strikerId!, nextBatsmanId].filter((id): id is string => !!id);
-              if (remainingIds.length < 2) return null;
-              const autoNext = (() => {
-                const rotate = wicketRuns % 2 !== 0;
-                if (outBatsmanId === innings.strikerId) return rotate ? (innings.nonStrikerId ?? '') : (nextBatsmanId ?? '');
-                return rotate ? (nextBatsmanId ?? '') : (innings.strikerId ?? '');
-              })();
-              const effective = forcedNextStrikerId || autoNext;
-              return (
-                <div className="mt-3">
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Who faces next?</label>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {remainingIds.map(id => {
-                      const name = battingTeam.players.find(p => p.id === id)?.name || 'Unknown';
-                      const isSelected = id === effective;
-                      return (
-                        <button
-                          key={id}
-                          onClick={() => setForcedNextStrikerId(id === autoNext ? '' : id)}
-                          className={`py-2 px-2 rounded-lg text-xs font-semibold border-2 ${isSelected ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600'}`}
-                        >
-                          {name}
-                          {id === autoNext && <span className="block text-[9px] text-slate-400 font-normal">auto</span>}
-                        </button>
-                      );
-                    })}
+              {/* Who faces next? — always shown when 2 batsmen will be at the crease */}
+              {outType !== 'retiredOut' && (() => {
+                const survivorId = outBatsmanId === innings.strikerId ? innings.nonStrikerId : innings.strikerId;
+                const incomingId = nextBatsmanId || null;
+                const ids = [survivorId, incomingId].filter((id): id is string => !!id);
+                if (ids.length < 2) return null;
+                const autoNext = (() => {
+                  const rotate = wicketRuns % 2 !== 0;
+                  if (outBatsmanId === innings.strikerId) return rotate ? (innings.nonStrikerId ?? '') : (incomingId ?? '');
+                  return rotate ? (incomingId ?? '') : (innings.strikerId ?? '');
+                })();
+                const effective = forcedNextStrikerId || autoNext;
+                return (
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Who faces next ball?</label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {ids.map(id => {
+                        const name = battingTeam.players.find(p => p.id === id)?.name || 'Unknown';
+                        const isSelected = id === effective;
+                        return (
+                          <button
+                            key={id}
+                            onClick={() => setForcedNextStrikerId(id === autoNext ? '' : id)}
+                            className={`py-2 px-2 rounded-lg text-xs font-semibold border-2 ${isSelected ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600'}`}
+                          >
+                            {name}
+                            {id === autoNext && <span className="block text-[9px] text-slate-400 font-normal">auto</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
+            </div>
 
             <div className="mt-4 flex gap-2">
               <button

@@ -4,7 +4,7 @@ export type Action =
   | { type: 'START_MATCH'; teams: Team[]; overs: number }
   | { type: 'RECORD_TOSS'; wonBy: string; electedTo: 'bat' | 'bowl' }
   | { type: 'START_INNINGS'; strikerId: string; nonStrikerId: string; bowlerId: string }
-  | { type: 'RECORD_DELIVERY'; runs: number; deliveryType: 'normal' | 'wide' | 'noBall' | 'wicket'; wicketDetails?: { outBatsmanId: string; outType: 'out' | 'retiredOut'; nextBatsmanId: string | null; forcedNextStrikerId?: string } }
+  | { type: 'RECORD_DELIVERY'; runs: number; deliveryType: 'normal' | 'wide' | 'noBall' | 'wicket'; wicketDetails?: { outBatsmanId: string; outType: 'out' | 'retiredOut'; nextBatsmanId: string | null; forcedNextStrikerId?: string; dismissalType?: 'caught' | 'bowled' | 'runOut' | 'stumped' | 'other' } }
   | { type: 'CHANGE_BOWLER'; bowlerId: string }
   | { type: 'END_INNINGS' }
   | { type: 'RESET_MATCH' }
@@ -165,9 +165,10 @@ const baseReducer = (state: AppState, action: Action): AppState => {
         : `[${isFirstInnings ? '1st' : '2nd'} Inn] ${overString}: ${bowlerName} to ${strikerName} - `;
 
       if (action.deliveryType === 'wicket' && action.wicketDetails) {
+        const isRunOut = action.wicketDetails.dismissalType === 'runOut';
         if (!isRetiredOut) {
           wickets += 1;
-          bowler.wickets += 1;
+          if (!isRunOut) bowler.wickets += 1;
         }
         const outBatsmanId = action.wicketDetails.outBatsmanId;
         const outBatsman = outBatsmanId === strikerId ? striker : { ...batters[outBatsmanId] };
