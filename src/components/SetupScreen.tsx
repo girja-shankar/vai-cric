@@ -51,6 +51,8 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
   const [registeredPlayers, setRegisteredPlayers] = useState<RegisteredPlayer[]>([]);
   const [globalTeams, setGlobalTeams] = useState<GlobalTeam[]>([]);
   const [loadTeamModal, setLoadTeamModal] = useState<1 | 2 | null>(null);
+  const [loadedTeam1Id, setLoadedTeam1Id] = useState<string | null>(null);
+  const [loadedTeam2Id, setLoadedTeam2Id] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([fetchRegisteredPlayers(), fetchGlobalTeams()]).then(([players, teams]) => {
@@ -127,11 +129,13 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
       setTeam1Players(players);
       setTeam1CaptainId(captainPlayer?.id ?? null);
       setTeam1FromPrev(false);
+      setLoadedTeam1Id(gt.id);
     } else {
       setTeam2Name(gt.name);
       setTeam2Players(players);
       setTeam2CaptainId(captainPlayer?.id ?? null);
       setTeam2FromPrev(false);
+      setLoadedTeam2Id(gt.id);
     }
     setLoadTeamModal(null);
   };
@@ -371,9 +375,11 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
                   className="w-full mt-3 bg-white border border-amber-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all appearance-none"
                 >
                   <option value="">Select common player</option>
-                  {registeredPlayers.map(rp => (
-                    <option key={rp.id} value={rp.name}>{rp.name}</option>
-                  ))}
+                  {registeredPlayers
+                    .filter(rp => !team1Players.some(p => p.name === rp.name) && !team2Players.some(p => p.name === rp.name))
+                    .map(rp => (
+                      <option key={rp.id} value={rp.name}>{rp.name}</option>
+                    ))}
                 </select>
               )}
             </div>
@@ -491,21 +497,33 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
               <button onClick={() => setLoadTeamModal(null)}><X className="w-5 h-5 text-slate-400" /></button>
             </div>
             <div className="space-y-2 max-h-72 overflow-y-auto">
-              {globalTeams.map(gt => (
-                <button
-                  key={gt.id}
-                  onClick={() => loadGlobalTeam(loadTeamModal, gt)}
-                  className="w-full flex items-center gap-3 bg-slate-50 hover:bg-indigo-50 border border-slate-100 hover:border-indigo-200 rounded-xl px-4 py-3 text-left transition-colors active:scale-[0.98]"
-                >
-                  <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
-                    <Users className="w-5 h-5 text-indigo-600" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-800 text-sm">{gt.name}</p>
-                    <p className="text-xs text-slate-400">{gt.player_names.length} players{gt.captain_name ? ` · ${gt.captain_name} (C)` : ''}</p>
-                  </div>
-                </button>
-              ))}
+              {globalTeams.map(gt => {
+                const otherSlotId = loadTeamModal === 1 ? loadedTeam2Id : loadedTeam1Id;
+                const isDisabled = gt.id === otherSlotId;
+                return (
+                  <button
+                    key={gt.id}
+                    onClick={() => !isDisabled && loadGlobalTeam(loadTeamModal, gt)}
+                    disabled={isDisabled}
+                    className={`w-full flex items-center gap-3 border rounded-xl px-4 py-3 text-left transition-colors ${
+                      isDisabled
+                        ? 'bg-slate-50 border-slate-100 opacity-40 cursor-not-allowed'
+                        : 'bg-slate-50 hover:bg-indigo-50 border-slate-100 hover:border-indigo-200 active:scale-[0.98]'
+                    }`}
+                  >
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isDisabled ? 'bg-slate-200' : 'bg-indigo-100'}`}>
+                      <Users className={`w-5 h-5 ${isDisabled ? 'text-slate-400' : 'text-indigo-600'}`} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">{gt.name}</p>
+                      <p className="text-xs text-slate-400">
+                        {gt.player_names.length} players{gt.captain_name ? ` · ${gt.captain_name} (C)` : ''}
+                        {isDisabled && ' · already selected'}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
