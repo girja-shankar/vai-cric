@@ -18,11 +18,12 @@ import PlayerRegistry from './components/PlayerRegistry';
 import LiveView from './components/LiveView';
 import TournamentListScreen from './components/TournamentListScreen';
 import TournamentDetailScreen from './components/TournamentDetailScreen';
+import TeamRegistryScreen from './components/TeamRegistryScreen';
 import { Tournament } from './lib/supabase';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { supabase, generateMatchId, syncLiveMatch, removeLiveMatch, saveCompletedMatch, fetchLiveMatch, addTournamentMatch, onAuthStateChange } from './lib/supabase';
 
-type Page = 'home' | 'match' | 'history' | 'stats' | 'players' | 'tournaments' | 'tournament-detail';
+type Page = 'home' | 'match' | 'history' | 'stats' | 'players' | 'tournaments' | 'tournament-detail' | 'teams';
 
 type Squad = { players: Player[]; captainId: string | null };
 
@@ -235,6 +236,7 @@ function MainApp() {
         onStats={() => setPage('stats')}
         onPlayers={() => setPage('players')}
         onTournaments={() => setPage('tournaments')}
+        onTeams={() => setPage('teams')}
         hasActiveMatch={state.matchState !== 'setup'}
         onResumeMatch={() => setPage('match')}
         onResumeMatchById={handleResumeMatch}
@@ -255,6 +257,10 @@ function MainApp() {
 
   if (page === 'players') {
     return <PlayerRegistry onBack={() => setPage('home')} />;
+  }
+
+  if (page === 'teams') {
+    return <TeamRegistryScreen onBack={() => setPage('home')} isAdmin={isAdmin} />;
   }
 
   if (page === 'tournaments') {

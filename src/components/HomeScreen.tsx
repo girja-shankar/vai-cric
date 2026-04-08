@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, History, BarChart3, Trophy, ChevronRight, Wifi, Users, Eye, Radio, Lock } from 'lucide-react';
+import { Plus, History, BarChart3, Trophy, ChevronRight, Wifi, Users, Eye, Radio, Lock, Shield } from 'lucide-react';
 import { supabase, fetchRecentMatches, fetchAllLiveMatches } from '../lib/supabase';
 import { AppState } from '../types';
 import AdminLoginModal from './AdminLoginModal';
@@ -10,6 +10,7 @@ type Props = {
   onStats: () => void;
   onPlayers: () => void;
   onTournaments: () => void;
+  onTeams: () => void;
   hasActiveMatch: boolean;
   onResumeMatch: () => void;
   onResumeMatchById: (id: string) => void;
@@ -37,7 +38,7 @@ type LiveMatchRow = {
   updated_at: string;
 };
 
-export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, onTournaments, hasActiveMatch, onResumeMatch, onResumeMatchById, currentMatchId, isAdmin, onAdminChange }: Props) {
+export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, onTournaments, onTeams, hasActiveMatch, onResumeMatch, onResumeMatchById, currentMatchId, isAdmin, onAdminChange }: Props) {
   const [recentMatches, setRecentMatches] = useState<MatchRow[]>([]);
   const [liveMatches, setLiveMatches] = useState<LiveMatchRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -229,6 +230,17 @@ export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, 
             </div>
             <h3 className="font-bold text-xs text-slate-800">Tournaments</h3>
             <p className="text-[9px] text-slate-400 mt-0.5">Points & NRR</p>
+          </button>
+
+          <button
+            onClick={onTeams}
+            className="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 text-left active:scale-[0.97] transition-all hover:shadow-md"
+          >
+            <div className="w-9 h-9 bg-rose-50 rounded-xl flex items-center justify-center mb-2">
+              <Shield className="w-4.5 h-4.5 text-rose-600" />
+            </div>
+            <h3 className="font-bold text-xs text-slate-800">Teams</h3>
+            <p className="text-[9px] text-slate-400 mt-0.5">Saved squads</p>
           </button>
         </div>
 

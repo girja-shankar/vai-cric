@@ -424,6 +424,40 @@ export const updateTournamentStatus = async (id: string, status: 'active' | 'com
   await supabase.from('tournaments').update({ status }).eq('id', id);
 };
 
+// --- Global Teams ---
+export type GlobalTeam = {
+  id: string;
+  name: string;
+  player_names: string[];
+  captain_name: string | null;
+  created_at: string;
+};
+
+export const fetchGlobalTeams = async (): Promise<GlobalTeam[]> => {
+  if (!supabase) return [];
+  const { data } = await supabase.from('global_teams').select('*').order('name');
+  return data || [];
+};
+
+export const createGlobalTeam = async (name: string, playerNames: string[], captainName: string | null): Promise<GlobalTeam | null> => {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('global_teams').insert({ name, player_names: playerNames, captain_name: captainName }).select().single();
+  if (error) console.warn('Failed to create global team:', error);
+  return data || null;
+};
+
+export const updateGlobalTeam = async (id: string, playerNames: string[], captainName: string | null): Promise<boolean> => {
+  if (!supabase) return false;
+  const { error } = await supabase.from('global_teams').update({ player_names: playerNames, captain_name: captainName }).eq('id', id);
+  return !error;
+};
+
+export const deleteGlobalTeam = async (id: string): Promise<boolean> => {
+  if (!supabase) return false;
+  const { error } = await supabase.from('global_teams').delete().eq('id', id);
+  return !error;
+};
+
 // --- Admin Auth ---
 export const signIn = async (email: string, password: string) => {
   if (!supabase) return { error: 'No client' };

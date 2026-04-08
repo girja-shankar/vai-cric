@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Team, Player } from '../types';
 import { Action } from '../store';
-import { Users, Settings, ChevronRight, ChevronLeft, Trophy, X, UserCheck, Hash, ArrowLeft, UserPlus, Crown } from 'lucide-react';
-import { fetchRegisteredPlayers, RegisteredPlayer } from '../lib/supabase';
+import { Users, Settings, ChevronRight, ChevronLeft, Trophy, X, UserCheck, Hash, ArrowLeft, UserPlus, Crown, BookOpen } from 'lucide-react';
+import { fetchRegisteredPlayers, fetchGlobalTeams, RegisteredPlayer, GlobalTeam } from '../lib/supabase';
 
 const MIN_OVERS = 1;
 const MAX_OVERS = 10;
@@ -49,9 +49,14 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
 
   const [activeTab, setActiveTab] = useState<Tab>('settings');
   const [registeredPlayers, setRegisteredPlayers] = useState<RegisteredPlayer[]>([]);
+  const [globalTeams, setGlobalTeams] = useState<GlobalTeam[]>([]);
+  const [loadTeamModal, setLoadTeamModal] = useState<1 | 2 | null>(null);
 
   useEffect(() => {
-    fetchRegisteredPlayers().then(setRegisteredPlayers);
+    Promise.all([fetchRegisteredPlayers(), fetchGlobalTeams()]).then(([players, teams]) => {
+      setRegisteredPlayers(players);
+      setGlobalTeams(teams);
+    });
   }, []);
 
   // Auto-update overs when player count changes (unless manually set)
@@ -112,6 +117,23 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
   const addRegisteredToTeam = (team: 1 | 2, name: string) => {
     const setPlayers = team === 1 ? setTeam1Players : setTeam2Players;
     setPlayers(prev => [...prev, { id: `t${team}-${Date.now()}`, name }]);
+  };
+
+  const loadGlobalTeam = (team: 1 | 2, gt: GlobalTeam) => {
+    const players = gt.player_names.map((name, i) => ({ id: `t${team}-gt-${i}-${Date.now()}`, name }));
+    const captainPlayer = players.find(p => p.name === gt.captain_name) ?? null;
+    if (team === 1) {
+      setTeam1Name(gt.name);
+      setTeam1Players(players);
+      setTeam1CaptainId(captainPlayer?.id ?? null);
+      setTeam1FromPrev(false);
+    } else {
+      setTeam2Name(gt.name);
+      setTeam2Players(players);
+      setTeam2CaptainId(captainPlayer?.id ?? null);
+      setTeam2FromPrev(false);
+    }
+    setLoadTeamModal(null);
   };
 
   const renderPlayerList = (
@@ -247,7 +269,14 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
         {activeTab === 'settings' && (
           <div className="flex flex-col gap-5 animate-in fade-in duration-200">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Team 1 Name</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Team 1 Name</label>
+                {globalTeams.length > 0 && (
+                  <button onClick={() => setLoadTeamModal(1)} className="flex items-center gap-1 text-xs text-indigo-600 font-semibold hover:text-indigo-800">
+                    <BookOpen className="w-3.5 h-3.5" /> Load Team
+                  </button>
+                )}
+              </div>
               <input
                 type="text"
                 value={team1Name}
@@ -258,7 +287,14 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Team 2 Name</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Team 2 Name</label>
+                {globalTeams.length > 0 && (
+                  <button onClick={() => setLoadTeamModal(2)} className="flex items-center gap-1 text-xs text-indigo-600 font-semibold hover:text-indigo-800">
+                    <BookOpen className="w-3.5 h-3.5" /> Load Team
+                  </button>
+                )}
+              </div>
               <input
                 type="text"
                 value={team2Name}
@@ -360,7 +396,14 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
           <div className="flex flex-col flex-grow min-h-0 animate-in fade-in duration-200">
             <div className="flex items-center justify-between mb-2 shrink-0">
               <h2 className="text-sm font-bold text-slate-800">{team1Name} Roster</h2>
-              <span className="text-xs font-medium text-slate-400">{filledTeam1} players</span>
+              <div className="flex items-center gap-2">
+                {globalTeams.length > 0 && (
+                  <button onClick={() => setLoadTeamModal(1)} className="flex items-center gap-1 text-xs text-indigo-600 font-semibold hover:text-indigo-800">
+                    <BookOpen className="w-3.5 h-3.5" /> Load Team
+                  </button>
+                )}
+                <span className="text-xs font-medium text-slate-400">{filledTeam1} players</span>
+              </div>
             </div>
             {team1FromPrev && (
               <div className="flex items-center gap-2 mb-2 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1.5 shrink-0">
@@ -382,7 +425,14 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
           <div className="flex flex-col flex-grow min-h-0 animate-in fade-in duration-200">
             <div className="flex items-center justify-between mb-2 shrink-0">
               <h2 className="text-sm font-bold text-slate-800">{team2Name} Roster</h2>
-              <span className="text-xs font-medium text-slate-400">{filledTeam2} players</span>
+              <div className="flex items-center gap-2">
+                {globalTeams.length > 0 && (
+                  <button onClick={() => setLoadTeamModal(2)} className="flex items-center gap-1 text-xs text-indigo-600 font-semibold hover:text-indigo-800">
+                    <BookOpen className="w-3.5 h-3.5" /> Load Team
+                  </button>
+                )}
+                <span className="text-xs font-medium text-slate-400">{filledTeam2} players</span>
+              </div>
             </div>
             {team2FromPrev && (
               <div className="flex items-center gap-2 mb-2 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1.5 shrink-0">
@@ -431,6 +481,35 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
           </button>
         )}
       </div>
+
+      {/* Load Team Modal */}
+      {loadTeamModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm" onClick={() => setLoadTeamModal(null)}>
+          <div className="bg-white w-full max-w-md rounded-t-3xl p-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-black text-slate-800">Load Team {loadTeamModal}</h2>
+              <button onClick={() => setLoadTeamModal(null)}><X className="w-5 h-5 text-slate-400" /></button>
+            </div>
+            <div className="space-y-2 max-h-72 overflow-y-auto">
+              {globalTeams.map(gt => (
+                <button
+                  key={gt.id}
+                  onClick={() => loadGlobalTeam(loadTeamModal, gt)}
+                  className="w-full flex items-center gap-3 bg-slate-50 hover:bg-indigo-50 border border-slate-100 hover:border-indigo-200 rounded-xl px-4 py-3 text-left transition-colors active:scale-[0.98]"
+                >
+                  <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
+                    <Users className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-800 text-sm">{gt.name}</p>
+                    <p className="text-xs text-slate-400">{gt.player_names.length} players{gt.captain_name ? ` · ${gt.captain_name} (C)` : ''}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
