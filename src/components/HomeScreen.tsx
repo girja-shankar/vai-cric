@@ -145,8 +145,12 @@ export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, 
                 if (!summary) return null;
                 const isCurrentMatch = m.id === currentMatchId;
                 return (
-                  <div key={m.id} className="px-3 py-2.5">
-                    <div className="flex justify-between items-start mb-1.5">
+                  <div
+                    key={m.id}
+                    onClick={() => { window.location.hash = `#/live/${m.id}`; }}
+                    className="px-3 py-2.5 cursor-pointer active:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 text-xs">
                           <span className="font-bold text-slate-700">{summary.team1Name}</span>
@@ -163,22 +167,21 @@ export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, 
                           </div>
                         )}
                       </div>
-                      <span className="text-[9px] font-mono text-slate-300 shrink-0">#{m.id}</span>
+                      <Eye className="w-3.5 h-3.5 text-indigo-300 shrink-0 ml-2 mt-0.5" />
                     </div>
-                    <div className="flex gap-2">
-                      {isAdmin && (isCurrentMatch ? (
-                        <button onClick={onResumeMatch} className="flex-1 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors">
-                          <Wifi className="w-3 h-3" /> Resume Scoring
-                        </button>
-                      ) : (
-                        <button onClick={() => onResumeMatchById(m.id)} className="flex-1 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors">
-                          <Wifi className="w-3 h-3" /> Resume as Umpire
-                        </button>
-                      ))}
-                      <button onClick={() => { window.location.hash = `#/live/${m.id}`; }} className="flex-1 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors">
-                        <Eye className="w-3 h-3" /> View Live
-                      </button>
-                    </div>
+                    {isAdmin && (
+                      <div className="mt-2" onClick={e => e.stopPropagation()}>
+                        {isCurrentMatch ? (
+                          <button onClick={onResumeMatch} className="w-full py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors">
+                            <Wifi className="w-3 h-3" /> Resume Scoring
+                          </button>
+                        ) : (
+                          <button onClick={() => onResumeMatchById(m.id)} className="w-full py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors">
+                            <Wifi className="w-3 h-3" /> Resume as Umpire
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
