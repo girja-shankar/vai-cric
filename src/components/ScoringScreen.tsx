@@ -585,8 +585,16 @@ export default function ScoringScreen({ state, dispatch, matchId }: { state: App
       {showBowlerModal && (
         <div className="absolute inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-8">
-            <h3 className="text-xl font-bold text-slate-800 mb-2">End of Over</h3>
-            <p className="text-slate-500 text-sm mb-6">Select the bowler for the next over.</p>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-slate-800">End of Over</h3>
+                <p className="text-slate-500 text-sm">Select the bowler for the next over.</p>
+              </div>
+              <div className="text-right bg-indigo-50 rounded-2xl px-4 py-2">
+                <div className="text-2xl font-black text-indigo-700">{innings.runs}/{innings.wickets}</div>
+                <div className="text-[10px] text-indigo-400 font-semibold">{battingTeam.name} · {(Math.floor(innings.balls / 6) + (innings.balls % 6) / 10).toFixed(1)} ov</div>
+              </div>
+            </div>
 
             <div className="space-y-2 max-h-60 overflow-y-auto mb-6 pr-2">
               {availableBowlers.map(p => {

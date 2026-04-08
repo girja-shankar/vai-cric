@@ -46,6 +46,15 @@ export default function InningsSetup({ state, dispatch }: { state: AppState; dis
           {isFirstInnings ? '1st Innings' : '2nd Innings'}
         </h1>
         <p className="text-indigo-200 text-xs">Tap to select opening players</p>
+
+        {!isFirstInnings && state.innings1 && (
+          <div className="mt-3 bg-white/15 rounded-2xl px-4 py-2 inline-block">
+            <div className="text-lg font-black">{state.innings1.runs}/{state.innings1.wickets}</div>
+            <div className="text-[10px] text-indigo-200 font-semibold">
+              {state.teams.find(t => t.id === state.innings1!.battingTeamId)?.name} · {(Math.floor(state.innings1.balls / 6) + (state.innings1.balls % 6) / 10).toFixed(1)} ov · Target {state.innings1.runs + 1}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Overs editor modal */}
