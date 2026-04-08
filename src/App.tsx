@@ -140,6 +140,33 @@ function MainApp() {
     }
   }, [state.matchState]);
 
+  // Push a dummy history entry whenever we navigate away from home,
+  // so the mobile back button is interceptable instead of closing the app.
+  useEffect(() => {
+    if (page !== 'home' || state.matchState !== 'setup') {
+      history.pushState({ appNav: true }, '');
+    }
+  }, [page, state.matchState]);
+
+  // Handle mobile back button — map to the correct in-app back action.
+  useEffect(() => {
+    const onPopState = () => {
+      // Immediately push another entry so back is always interceptable.
+      history.pushState({ appNav: true }, '');
+
+      if (page === 'match') {
+        if (['innings1', 'innings2'].includes(state.matchState)) return; // ignore during active play
+        dispatch({ type: 'GO_BACK' });
+      } else if (page === 'tournament-detail') {
+        setPage('tournaments');
+      } else if (page !== 'home') {
+        setPage('home');
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [page, state.matchState]);
+
   // When match resets (from result/scoring via quit), go back to home or tournament
   const intentionalSetup = useRef(false);
   useEffect(() => {
