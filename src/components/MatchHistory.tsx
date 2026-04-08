@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Trophy, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
-import { fetchRecentMatches, supabase } from '../lib/supabase';
+import { ArrowLeft, Trophy, Calendar, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { fetchRecentMatches, deleteMatch, supabase } from '../lib/supabase';
 
 type MatchRow = {
   id: string;
@@ -30,11 +30,12 @@ type PlayerStatRow = {
   overs_bowled: number;
 };
 
-export default function MatchHistory({ onBack }: { onBack: () => void }) {
+export default function MatchHistory({ onBack, isAdmin }: { onBack: () => void; isAdmin?: boolean }) {
   const [matches, setMatches] = useState<MatchRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [matchStats, setMatchStats] = useState<Record<string, PlayerStatRow[]>>({});
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -56,6 +57,13 @@ export default function MatchHistory({ onBack }: { onBack: () => void }) {
         setMatchStats(prev => ({ ...prev, [matchId]: data as PlayerStatRow[] }));
       }
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    await deleteMatch(id);
+    setMatches(prev => prev.filter(m => m.id !== id));
+    setDeletingId(null);
   };
 
   const formatOvers = (balls: number) => (Math.floor(balls / 6) + (balls % 6) / 10).toFixed(1);
@@ -101,7 +109,20 @@ export default function MatchHistory({ onBack }: { onBack: () => void }) {
                       <span className="text-slate-300">•</span>
                       <span>{m.overs} overs</span>
                     </div>
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                    <div className="flex items-center gap-1">
+                      {isAdmin && (
+                        <button
+                          onClick={e => { e.stopPropagation(); handleDelete(m.id); }}
+                          disabled={deletingId === m.id}
+                          className="p-1.5 text-slate-300 hover:text-rose-500 transition-colors"
+                        >
+                          {deletingId === m.id
+                            ? <div className="w-3.5 h-3.5 border-2 border-rose-400 border-t-transparent rounded-full animate-spin" />
+                            : <Trash2 className="w-3.5 h-3.5" />}
+                        </button>
+                      )}
+                      {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                    </div>
                   </div>
 
                   <div className="flex justify-between items-center">

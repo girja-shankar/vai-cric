@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, History, BarChart3, Trophy, ChevronRight, Wifi, Users, Eye, Radio } from 'lucide-react';
+import { Plus, History, BarChart3, Trophy, ChevronRight, Wifi, Users, Eye, Radio, Lock } from 'lucide-react';
 import { supabase, fetchRecentMatches, fetchAllLiveMatches } from '../lib/supabase';
 import { AppState } from '../types';
+import AdminLoginModal from './AdminLoginModal';
 
 type Props = {
   onNewMatch: () => void;
@@ -13,6 +14,8 @@ type Props = {
   onResumeMatch: () => void;
   onResumeMatchById: (id: string) => void;
   currentMatchId: string | null;
+  isAdmin: boolean;
+  onAdminChange: (v: boolean) => void;
 };
 
 type MatchRow = {
@@ -34,10 +37,11 @@ type LiveMatchRow = {
   updated_at: string;
 };
 
-export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, onTournaments, hasActiveMatch, onResumeMatch, onResumeMatchById, currentMatchId }: Props) {
+export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, onTournaments, hasActiveMatch, onResumeMatch, onResumeMatchById, currentMatchId, isAdmin, onAdminChange }: Props) {
   const [recentMatches, setRecentMatches] = useState<MatchRow[]>([]);
   const [liveMatches, setLiveMatches] = useState<LiveMatchRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -91,10 +95,17 @@ export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, 
             <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
               <Trophy className="w-7 h-7 text-amber-300" />
             </div>
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl font-black tracking-tight">VAI Cricket</h1>
               <p className="text-indigo-200 text-xs font-medium">Score Calculator & Stats</p>
             </div>
+            <button
+              onClick={() => setShowAdminModal(true)}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              title="Admin"
+            >
+              <Lock className={`w-4 h-4 ${isAdmin ? 'text-amber-300' : 'text-indigo-300'}`} />
+            </button>
           </div>
 
           {/* Quick Actions */}
@@ -290,6 +301,14 @@ export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, 
           )}
         </div>
       </div>
+
+      {showAdminModal && (
+        <AdminLoginModal
+          isAdmin={isAdmin}
+          onClose={() => setShowAdminModal(false)}
+          onAuthChange={onAdminChange}
+        />
+      )}
     </div>
   );
 }

@@ -5,9 +5,10 @@ import { fetchTournaments, createTournament, deleteTournament, Tournament } from
 type Props = {
   onBack: () => void;
   onOpen: (t: Tournament) => void;
+  isAdmin?: boolean;
 };
 
-export default function TournamentListScreen({ onBack, onOpen }: Props) {
+export default function TournamentListScreen({ onBack, onOpen, isAdmin }: Props) {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -164,14 +165,16 @@ export default function TournamentListScreen({ onBack, onOpen }: Props) {
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
                   </button>
-                  <button
-                    onClick={() => setConfirmDeleteId(confirmDeleteId === t.id ? null : t.id)}
-                    className="p-2 text-slate-300 hover:text-rose-500 transition-colors shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => setConfirmDeleteId(confirmDeleteId === t.id ? null : t.id)}
+                      className="p-2 text-slate-300 hover:text-rose-500 transition-colors shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
-                {confirmDeleteId === t.id && (
+                {isAdmin && confirmDeleteId === t.id && (
                   <div className="px-4 pb-3 flex items-center gap-2 border-t border-rose-50 bg-rose-50/50">
                     <p className="text-xs text-rose-600 flex-1">Delete this tournament and all its matches?</p>
                     <button

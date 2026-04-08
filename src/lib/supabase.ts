@@ -398,6 +398,13 @@ export const addTournamentMatch = async (match: Omit<TournamentMatch, 'id' | 'pl
   return !error;
 };
 
+export const deleteMatch = async (id: string): Promise<boolean> => {
+  if (!supabase) return false;
+  await supabase.from('match_player_stats').delete().eq('match_id', id);
+  const { error } = await supabase.from('matches').delete().eq('id', id);
+  return !error;
+};
+
 export const deleteTournamentMatch = async (id: string): Promise<boolean> => {
   if (!supabase) return false;
   const { error } = await supabase.from('tournament_matches').delete().eq('id', id);
@@ -415,6 +422,26 @@ export const deleteTournament = async (id: string): Promise<boolean> => {
 export const updateTournamentStatus = async (id: string, status: 'active' | 'completed'): Promise<void> => {
   if (!supabase) return;
   await supabase.from('tournaments').update({ status }).eq('id', id);
+};
+
+// --- Admin Auth ---
+export const signIn = async (email: string, password: string) => {
+  if (!supabase) return { error: 'No client' };
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  return { data, error: error?.message ?? null };
+};
+
+export const signOut = async () => {
+  if (!supabase) return;
+  await supabase.auth.signOut();
+};
+
+export const onAuthStateChange = (cb: (isLoggedIn: boolean) => void) => {
+  if (!supabase) return () => {};
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    cb(!!session?.user);
+  });
+  return () => subscription.unsubscribe();
 };
 
 // Convert balls to overs in decimal form (e.g. 47 balls → 7.5)

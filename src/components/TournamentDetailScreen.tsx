@@ -8,7 +8,7 @@ import {
   addTournamentMatch, deleteTournamentMatch, updateTournamentStatus,
 } from '../lib/supabase';
 
-type Props = { tournament: Tournament; onBack: () => void; onStartMatch: (team1: string, team2: string, autoTossTeam?: string) => void };
+type Props = { tournament: Tournament; onBack: () => void; onStartMatch: (team1: string, team2: string, autoTossTeam?: string) => void; isAdmin?: boolean };
 type SubTab = 'points' | 'matches';
 
 type TeamRow = {
@@ -157,7 +157,7 @@ function AddMatchModal({ teams, tournamentId, onSaved, onClose }: MatchFormProps
 }
 
 // ── Main Screen ───────────────────────────────────────────────────
-export default function TournamentDetailScreen({ tournament, onBack, onStartMatch }: Props) {
+export default function TournamentDetailScreen({ tournament, onBack, onStartMatch, isAdmin }: Props) {
   const [teams, setTeams] = useState<TournamentTeam[]>([]);
   const [matches, setMatches] = useState<TournamentMatch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -362,10 +362,12 @@ export default function TournamentDetailScreen({ tournament, onBack, onStartMatc
                           </div>
                         </div>
                       </div>
-                      <button onClick={() => handleDelete(m.id)}
-                        className="p-1.5 text-slate-300 hover:text-rose-500 shrink-0 transition-colors mt-1">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {isAdmin && (
+                        <button onClick={() => handleDelete(m.id)}
+                          className="p-1.5 text-slate-300 hover:text-rose-500 shrink-0 transition-colors mt-1">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                     <p className="text-[10px] text-slate-400 mt-1 border-t border-slate-50 pt-1">
                       {new Date(m.played_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}

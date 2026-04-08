@@ -20,7 +20,7 @@ import TournamentListScreen from './components/TournamentListScreen';
 import TournamentDetailScreen from './components/TournamentDetailScreen';
 import { Tournament } from './lib/supabase';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { supabase, generateMatchId, syncLiveMatch, removeLiveMatch, saveCompletedMatch, fetchLiveMatch, addTournamentMatch } from './lib/supabase';
+import { supabase, generateMatchId, syncLiveMatch, removeLiveMatch, saveCompletedMatch, fetchLiveMatch, addTournamentMatch, onAuthStateChange } from './lib/supabase';
 
 type Page = 'home' | 'match' | 'history' | 'stats' | 'players' | 'tournaments' | 'tournament-detail';
 
@@ -40,8 +40,13 @@ function MainApp() {
   const [page, setPage] = useState<Page>('home');
   const [matchId, setMatchId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [activeTournament, setActiveTournament] = useState<Tournament | null>(null);
   const [tournamentMatchContext, setTournamentMatchContext] = useState<{ tournamentId: string; team1: string; team2: string; prevSquad1?: Squad | null; prevSquad2?: Squad | null; autoTossTeam?: string | null } | null>(null);
+
+  useEffect(() => {
+    return onAuthStateChange(setIsAdmin);
+  }, []);
 
   const prevMatchState = useRef(state.matchState);
 
@@ -207,12 +212,14 @@ function MainApp() {
         onResumeMatch={() => setPage('match')}
         onResumeMatchById={handleResumeMatch}
         currentMatchId={matchId}
+        isAdmin={isAdmin}
+        onAdminChange={setIsAdmin}
       />
     );
   }
 
   if (page === 'history') {
-    return <MatchHistory onBack={() => setPage('home')} />;
+    return <MatchHistory onBack={() => setPage('home')} isAdmin={isAdmin} />;
   }
 
   if (page === 'stats') {
@@ -228,6 +235,7 @@ function MainApp() {
       <TournamentListScreen
         onBack={() => setPage('home')}
         onOpen={t => { setActiveTournament(t); setPage('tournament-detail'); }}
+        isAdmin={isAdmin}
       />
     );
   }
@@ -238,6 +246,7 @@ function MainApp() {
         tournament={activeTournament}
         onBack={() => setPage('tournaments')}
         onStartMatch={(team1, team2, autoTossTeam) => handleStartTournamentMatch(activeTournament, team1, team2, autoTossTeam)}
+        isAdmin={isAdmin}
       />
     );
   }
