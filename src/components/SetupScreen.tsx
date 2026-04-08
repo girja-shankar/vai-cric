@@ -139,7 +139,7 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Selected ({players.length})</span>
               <span className="text-[10px] text-slate-400 ml-auto">Tap crown to set captain</span>
             </div>
-            <div className="space-y-0.5 overflow-y-auto flex-grow min-h-0">
+            <div className="space-y-0.5 overflow-y-auto max-h-40 min-h-0">
               {players.map((p, i) => {
                 const isCaptain = p.id === captainId;
                 return (
@@ -184,7 +184,7 @@ export default function SetupScreen({ dispatch, onBack, defaultTeam1, defaultTea
               <p className="text-[10px] text-slate-400">All registered players added</p>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
+            <div className="flex flex-wrap gap-1">
               {available.map(rp => (
                 <button
                   key={rp.id}
