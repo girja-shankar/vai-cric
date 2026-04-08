@@ -165,7 +165,7 @@ export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, 
                       <span className="text-[9px] font-mono text-slate-300 shrink-0">#{m.id}</span>
                     </div>
                     <div className="flex gap-2">
-                      {isCurrentMatch ? (
+                      {isAdmin && (isCurrentMatch ? (
                         <button onClick={onResumeMatch} className="flex-1 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors">
                           <Wifi className="w-3 h-3" /> Resume Scoring
                         </button>
@@ -173,7 +173,7 @@ export default function HomeScreen({ onNewMatch, onHistory, onStats, onPlayers, 
                         <button onClick={() => onResumeMatchById(m.id)} className="flex-1 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors">
                           <Wifi className="w-3 h-3" /> Resume as Umpire
                         </button>
-                      )}
+                      ))}
                       <button onClick={() => { window.location.hash = `#/live/${m.id}`; }} className="flex-1 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 transition-colors">
                         <Eye className="w-3 h-3" /> View Live
                       </button>
