@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { AppState, Innings } from "../types";
 import { Action } from "../store";
 import {
@@ -16,6 +16,7 @@ import {
   Trash2,
   UserCheck,
   ArrowLeft,
+  ArrowUpDown,
   Share2,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
@@ -250,6 +251,13 @@ export default function ScoringScreen({
     }
   }, [innings.balls, innings.isComplete, lastOverPrompted]);
 
+  const auditScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (auditScrollRef.current) {
+      auditScrollRef.current.scrollTop = auditScrollRef.current.scrollHeight;
+    }
+  }, [state.auditLog.length]);
+
   const [flashId, setFlashId] = useState<string | null>(null);
 
   const triggerFeedback = (id: string) => {
@@ -387,12 +395,11 @@ export default function ScoringScreen({
       {/* Main Content */}
       <div className="flex-grow p-2 flex flex-col min-h-0 overflow-hidden gap-2">
         {/* Batsmen */}
-        <div className="rounded-lg overflow-hidden shrink-0 shadow-sm border border-slate-200">
+        <div className="relative rounded-lg overflow-visible shrink-0 shadow-sm border border-slate-200">
           {/* Striker — highlighted */}
           <div className="bg-indigo-50 border-2 border-indigo-400 rounded-lg px-3 py-3 flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
-              <span className="font-bold text-base text-indigo-900">
+<span className="font-bold text-base text-indigo-900">
                 {battingTeam.players.find((p) => p.id === striker.id)?.name}
               </span>
               {striker.id === battingTeam.captainId && (
@@ -405,9 +412,21 @@ export default function ScoringScreen({
               <span className="text-indigo-400 text-xs">({striker.balls})</span>
             </div>
           </div>
+          {/* Swap button — floats between rows, right-aligned before score */}
+          {nonStriker && (
+            <div className="relative h-0 flex justify-end pr-20 z-10">
+              <button
+                onClick={() => dispatch({ type: 'SWAP_STRIKE' })}
+                className="absolute -top-5 bg-white border-2 border-indigo-300 rounded-lg p-2 shadow-sm hover:bg-indigo-50 text-indigo-500 transition-colors"
+                title="Swap strike"
+              >
+                <ArrowUpDown className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           {/* Non-striker — muted */}
           {nonStriker ? (
-            <div className="bg-white px-3 py-2.5 flex justify-between items-center">
+            <div className="bg-white rounded-b-lg px-3 py-2.5 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-sm text-slate-500">
                   {battingTeam.players.find((p) => p.id === nonStriker.id)?.name}
@@ -450,28 +469,32 @@ export default function ScoringScreen({
             </div>
             <div>
               <div className="text-[9px] text-slate-400">W</div>
-              <div className="font-bold text-base text-rose-600">
+              <div className="font-bold text-base">
                 {bowler.wickets}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Spacer + last 4 audit entries */}
-        <div className="flex-grow flex flex-col justify-center gap-1 px-1">
-          {state.auditLog.length === 0 ? null : (
-            [...state.auditLog].slice(-4).map((log, i, arr) => {
-              const entry = log.replace(/^\[\d+\w+ Inn\]\s*/, '');
-              return (
-                <div
-                  key={i}
-                  className={`text-xs px-2 py-0.5 font-mono ${i === arr.length - 1 ? 'text-slate-700' : 'text-slate-400'}`}
-                  style={{ opacity: 1 - (arr.length - 1 - i) * 0.08 }}
-                >
-                  {entry}
-                </div>
-              );
-            })
+        {/* Scrollable audit log */}
+        <div ref={auditScrollRef} className="flex-grow overflow-y-auto min-h-0 max-h-40 px-1">
+          {state.auditLog.length === 0 ? (
+            <p className="text-center text-xs text-slate-300 py-2">No deliveries yet</p>
+          ) : (
+            <div className="flex flex-col gap-0.5 py-1 justify-end min-h-full">
+              {[...state.auditLog].map((log, i, arr) => {
+                const entry = log.replace(/^\[\d+\w+ Inn\]\s*/, '');
+                const isLatest = i === arr.length - 1;
+                return (
+                  <div
+                    key={i}
+                    className="text-xs px-2 py-0.5 font-mono text-slate-400"
+                  >
+                    {entry}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
 
@@ -556,7 +579,7 @@ export default function ScoringScreen({
                 setForcedNextStrikerId("");
                 setShowWicketModal(true);
               }}
-              className={`py-3.5 flex items-center justify-center rounded-xl font-bold text-xs text-rose-700 bg-rose-50 border-2 border-rose-400 shadow-sm active:scale-90 relative overflow-hidden ${flashId === type ? "ring-4 ring-rose-400 scale-95" : ""}`}
+              className={`py-3.5 flex items-center justify-center rounded-xl font-bold text-sm text-rose-700 bg-rose-50 border-2 border-rose-400 shadow-sm active:scale-90 relative overflow-hidden ${flashId === type ? "ring-4 ring-rose-400 scale-95" : ""}`}
             >
               {flashId === type && (
                 <span className="absolute inset-0 bg-rose-400/20 animate-ping rounded-xl" />

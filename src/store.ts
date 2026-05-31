@@ -6,6 +6,7 @@ export type Action =
   | { type: 'START_INNINGS'; strikerId: string; nonStrikerId: string; bowlerId: string }
   | { type: 'RECORD_DELIVERY'; runs: number; deliveryType: 'normal' | 'wide' | 'noBall' | 'wicket'; wicketDetails?: { outBatsmanId: string; outType: 'out' | 'retiredOut'; nextBatsmanId: string | null; forcedNextStrikerId?: string; dismissalType?: 'caught' | 'bowled' | 'runOut' | 'stumped' | 'other' } }
   | { type: 'CHANGE_BOWLER'; bowlerId: string }
+  | { type: 'SWAP_STRIKE' }
   | { type: 'END_INNINGS' }
   | { type: 'RESET_MATCH' }
   | { type: 'UNDO' }
@@ -271,6 +272,21 @@ const baseReducer = (state: AppState, action: Action): AppState => {
         ...state,
         [inningsKey]: newInnings,
         auditLog: newAuditLog,
+      };
+    }
+    case 'SWAP_STRIKE': {
+      const isFirstInnings = state.matchState === 'innings1';
+      const inningsKey = isFirstInnings ? 'innings1' : 'innings2';
+      const innings = state[inningsKey]!;
+      if (!innings.nonStrikerId) return state;
+      return {
+        ...state,
+        [inningsKey]: {
+          ...innings,
+          strikerId: innings.nonStrikerId,
+          nonStrikerId: innings.strikerId,
+        },
+        auditLog: [...(state.auditLog || []), `Strike rotated manually`],
       };
     }
     case 'CHANGE_BOWLER': {
