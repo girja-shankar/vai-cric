@@ -260,10 +260,8 @@ export default function ScoringScreen({
 
   const [flashId, setFlashId] = useState<string | null>(null);
 
-  const triggerFeedback = (id: string) => {
-    // Haptic feedback
-    if (navigator.vibrate) navigator.vibrate(30);
-    // Visual flash
+  const triggerFeedback = (id: string, pattern?: number | number[]) => {
+    if (navigator.vibrate) navigator.vibrate(pattern ?? 30);
     setFlashId(id);
     setTimeout(() => setFlashId(null), 300);
   };
@@ -272,7 +270,13 @@ export default function ScoringScreen({
     runs: number,
     type: "normal" | "wide" | "noBall" = "normal",
   ) => {
-    triggerFeedback(`${type}-${runs}`);
+    const pattern =
+      type === 'wide' || type === 'noBall' ? [20, 30, 20] :
+      runs === 6 ? [60, 40, 60, 40, 60] :
+      runs === 4 ? [50, 40, 50] :
+      runs === 0 ? 15 :
+      40;
+    triggerFeedback(`${type}-${runs}`, pattern);
     dispatch({ type: "RECORD_DELIVERY", runs, deliveryType: type });
   };
 
@@ -570,7 +574,7 @@ export default function ScoringScreen({
             <button
               key={type}
               onClick={() => {
-                triggerFeedback(type);
+                triggerFeedback(type, [80, 40, 80]);
                 setOutBatsmanId(innings.strikerId!);
                 setOutType(type === "other" ? "retiredOut" : "out");
                 setDismissalType(type);
