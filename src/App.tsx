@@ -21,7 +21,7 @@ import TournamentDetailScreen from './components/TournamentDetailScreen';
 import TeamRegistryScreen from './components/TeamRegistryScreen';
 import { Tournament } from './lib/supabase';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { supabase, generateMatchId, syncLiveMatch, removeLiveMatch, saveCompletedMatch, fetchLiveMatch, addTournamentMatch, onAuthStateChange } from './lib/supabase';
+import { supabase, generateMatchId, syncLiveMatch, removeLiveMatch, saveCompletedMatch, fetchLiveMatch, addTournamentMatch, onAuthStateChange, fetchGlobalTeams } from './lib/supabase';
 
 type Page = 'home' | 'match' | 'history' | 'stats' | 'players' | 'tournaments' | 'tournament-detail' | 'teams';
 
@@ -43,6 +43,7 @@ function MainApp() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTournament, setActiveTournament] = useState<Tournament | null>(null);
+  const [autoCreateTournament, setAutoCreateTournament] = useState(false);
   const [tournamentMatchContext, setTournamentMatchContext] = useState<{ tournamentId: string; team1: string; team2: string; prevSquad1?: Squad | null; prevSquad2?: Squad | null; autoTossTeam?: string | null } | null>(null);
 
   useEffect(() => {
@@ -193,12 +194,28 @@ function MainApp() {
     setPage('match');
   }, [matchId]);
 
-  const handleStartTournamentMatch = useCallback((tournament: Tournament, team1: string, team2: string, autoTossTeam?: string) => {
-    const loadSquad = (teamName: string): Squad | null => {
+  const handleStartTournamentMatch = useCallback(async (tournament: Tournament, team1: string, team2: string, autoTossTeam?: string) => {
+    const loadSquadFromStorage = (teamName: string): Squad | null => {
       const raw = localStorage.getItem(`squad_${tournament.id}_${teamName}`);
       if (!raw) return null;
       try { return JSON.parse(raw) as Squad; } catch { return null; }
     };
+
+    // Fetch global teams to use as fallback squad when no localStorage data
+    const globalTeams = await fetchGlobalTeams();
+    const loadSquad = (teamName: string): Squad | null => {
+      const stored = loadSquadFromStorage(teamName);
+      if (stored) return stored;
+      const gt = globalTeams.find(t => t.name === teamName);
+      if (!gt) return null;
+      return {
+        players: gt.player_names.map((name, i) => ({ id: `gt-${gt.id}-${i}`, name })),
+        captainId: gt.captain_name
+          ? `gt-${gt.id}-${gt.player_names.indexOf(gt.captain_name)}`
+          : null,
+      };
+    };
+
     setTournamentMatchContext({ tournamentId: tournament.id, team1, team2, prevSquad1: loadSquad(team1), prevSquad2: loadSquad(team2), autoTossTeam: autoTossTeam ?? null });
     intentionalSetup.current = true;
     if (matchId) removeLiveMatch(matchId);
@@ -236,6 +253,7 @@ function MainApp() {
         onStats={() => setPage('stats')}
         onPlayers={() => setPage('players')}
         onTournaments={() => setPage('tournaments')}
+        onNewTournament={() => { setAutoCreateTournament(true); setPage('tournaments'); }}
         onTeams={() => setPage('teams')}
         hasActiveMatch={state.matchState !== 'setup'}
         onResumeMatch={() => setPage('match')}
@@ -266,9 +284,11 @@ function MainApp() {
   if (page === 'tournaments') {
     return (
       <TournamentListScreen
-        onBack={() => setPage('home')}
+        onBack={() => { setAutoCreateTournament(false); setPage('home'); }}
         onOpen={t => { setActiveTournament(t); setPage('tournament-detail'); }}
         isAdmin={isAdmin}
+        autoCreate={autoCreateTournament}
+        key={autoCreateTournament ? 'auto-create' : 'normal'}
       />
     );
   }

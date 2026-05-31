@@ -1,28 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Plus, Trophy, ChevronRight, X, Check, Trash2 } from 'lucide-react';
-import { fetchTournaments, createTournament, deleteTournament, Tournament } from '../lib/supabase';
+import { ArrowLeft, Plus, Trophy, ChevronRight, X, Check, Trash2, BookOpen } from 'lucide-react';
+import { fetchTournaments, createTournament, deleteTournament, Tournament, fetchGlobalTeams, GlobalTeam } from '../lib/supabase';
 
 type Props = {
   onBack: () => void;
   onOpen: (t: Tournament) => void;
   isAdmin?: boolean;
+  autoCreate?: boolean;
 };
 
-export default function TournamentListScreen({ onBack, onOpen, isAdmin }: Props) {
+export default function TournamentListScreen({ onBack, onOpen, isAdmin, autoCreate }: Props) {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [name, setName] = useState('');
+  const [creating, setCreating] = useState(autoCreate ?? false);
+  const [name, setName] = useState(new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }));
   const [teams, setTeams] = useState<string[]>(['', '']);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [globalTeams, setGlobalTeams] = useState<GlobalTeam[]>([]);
+  const [openPickers, setOpenPickers] = useState<Set<number>>(new Set([0, 1]));
 
   useEffect(() => {
-    fetchTournaments().then(data => { setTournaments(data); setLoading(false); });
+    Promise.all([fetchTournaments(), fetchGlobalTeams()]).then(([matches, gt]) => {
+      setTournaments(matches);
+      setGlobalTeams(gt);
+      setLoading(false);
+    });
   }, []);
 
-  const addTeamField = () => setTeams(t => [...t, '']);
+  const addTeamField = () => { const idx = teams.length; setTeams(t => [...t, '']); setOpenPickers(prev => new Set([...prev, idx])); };
   const removeTeamField = (i: number) => setTeams(t => t.filter((_, idx) => idx !== i));
   const updateTeam = (i: number, val: string) => setTeams(t => t.map((v, idx) => idx === i ? val : v));
 
@@ -33,9 +40,7 @@ export default function TournamentListScreen({ onBack, onOpen, isAdmin }: Props)
     const t = await createTournament(name.trim(), validTeams);
     if (t) {
       setTournaments(prev => [t, ...prev]);
-      setCreating(false);
-      setName('');
-      setTeams(['', '']);
+      onOpen(t);
     }
     setSaving(false);
   };
@@ -89,20 +94,41 @@ export default function TournamentListScreen({ onBack, onOpen, isAdmin }: Props)
               className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400"
             />
 
-            <div className="space-y-2">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Teams</p>
+            <div className="space-y-3">
               {teams.map((t, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <input
-                    value={t}
-                    onChange={e => updateTeam(i, e.target.value)}
-                    placeholder={`Team ${i + 1}`}
-                    className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-400"
-                  />
-                  {teams.length > 2 && (
-                    <button onClick={() => removeTeamField(i)} className="p-1.5 text-slate-400 hover:text-rose-500">
-                      <X className="w-4 h-4" />
-                    </button>
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-bold text-slate-600">Team {i + 1}</p>
+                    {teams.length > 2 && (
+                      <button onClick={() => removeTeamField(i)} className="text-slate-300 hover:text-rose-500">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  {globalTeams.length > 0 ? (
+                    <div className="flex flex-col gap-1">
+                      {globalTeams.map(gt => (
+                        <button
+                          key={gt.id}
+                          onClick={() => updateTeam(i, gt.name)}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
+                            t === gt.name
+                              ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
+                              : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200'
+                          }`}
+                        >
+                          <span>{gt.name}</span>
+                          <span className="text-[10px] text-slate-400">{gt.player_names.length} players</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <input
+                      value={t}
+                      onChange={e => updateTeam(i, e.target.value)}
+                      placeholder={`Team ${i + 1}`}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-400"
+                    />
                   )}
                 </div>
               ))}
