@@ -38,6 +38,7 @@ export default function ScoringScreen({
   const bowlingTeam = state.teams.find((t) => t.id === innings.bowlingTeamId)!;
 
   const [showWicketModal, setShowWicketModal] = useState(false);
+  const [showNoBallRunsModal, setShowNoBallRunsModal] = useState(false);
   const [showBowlerModal, setShowBowlerModal] = useState(false);
   const [showScorecard, setShowScorecard] = useState(false);
   const [showAuditLog, setShowAuditLog] = useState(false);
@@ -553,7 +554,7 @@ export default function ScoringScreen({
             Wide
           </button>
           <button
-            onClick={() => handleDelivery(0, "noBall")}
+            onClick={() => { triggerFeedback('noBall-0', [20, 30, 20]); setShowNoBallRunsModal(true); }}
             className={`py-3.5 flex items-center justify-center rounded-xl font-bold text-xl text-slate-700 bg-white border-2 border-indigo-200 shadow-sm active:scale-90 relative overflow-hidden ${flashId === "noBall-0" ? "ring-4 ring-amber-400 scale-95" : ""}`}
           >
             {flashId === "noBall-0" && (
@@ -1129,6 +1130,40 @@ export default function ScoringScreen({
                 Save Changes
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* No Ball Runs Modal */}
+      {showNoBallRunsModal && (
+        <div className="absolute inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl animate-in slide-in-from-bottom-8">
+            <h3 className="text-base font-bold text-slate-800 mb-1">No Ball</h3>
+            <p className="text-sm text-slate-500 mb-4">How many runs off the bat?</p>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {[0, 1, 2, 3, 4, 6].map(runs => (
+                <button
+                  key={runs}
+                  onClick={() => {
+                    handleDelivery(runs, 'noBall');
+                    setShowNoBallRunsModal(false);
+                  }}
+                  className={`py-3 rounded-xl font-bold text-lg border-2 transition-all active:scale-95 ${
+                    runs === 4 || runs === 6
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-400'
+                      : 'bg-white text-slate-700 border-indigo-200'
+                  }`}
+                >
+                  {runs}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowNoBallRunsModal(false)}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
