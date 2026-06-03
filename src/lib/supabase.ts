@@ -27,8 +27,11 @@ export const fetchLiveMatch = async (matchId: string): Promise<AppState | null> 
 export const fetchAllLiveMatches = async (): Promise<Array<{ id: string; state: AppState; updated_at: string }>> => {
   if (!supabase) return [];
   try {
-    const { data } = await supabase.from('live_matches').select('id, state, updated_at').order('updated_at', { ascending: false });
-    return (data || []) as Array<{ id: string; state: AppState; updated_at: string }>;
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data } = await supabase.from('live_matches').select('id, state, updated_at').gt('updated_at', cutoff).order('updated_at', { ascending: false });
+    return ((data || []) as Array<{ id: string; state: AppState; updated_at: string }>).filter(
+      m => m.state?.matchState !== 'result'
+    );
   } catch {
     return [];
   }
