@@ -314,53 +314,117 @@ export type DayAward = {
   super_striker: { player_name: string; sr: number; runs: number } | null;
   most_sixes: { player_name: string; sixes: number } | null;
   most_fours: { player_name: string; fours: number } | null;
-  most_wickets: { player_name: string; wickets: number } | null;
+  most_wickets: { player_name: string; wickets: number; economy: number } | null;
+  comeback_player: { player_name: string; runs: number; wickets: number; prev_runs: number; prev_wickets: number; score: number } | null;
 };
 
 export const fetchDayWiseAwards = async (): Promise<DayAward[]> => {
   if (!supabase) return [];
   try {
-    const { data } = await supabase
-      .from('match_player_stats')
-      .select('player_name, runs_scored, balls_faced, fours, sixes, wickets_taken, matches!inner(played_at)');
+    const [{ data: matches }, { data: stats }] = await Promise.all([
+      supabase.from('matches').select('id, played_at'),
+      supabase.from('match_player_stats').select('match_id, player_name, runs_scored, balls_faced, fours, sixes, wickets_taken, runs_conceded, overs_bowled'),
+    ]);
 
-    if (!data || data.length === 0) return [];
+    if (!matches || !stats || stats.length === 0) return [];
+
+    const matchDateById: Record<string, string> = {};
+    (matches as any[]).forEach(m => {
+      matchDateById[m.id] = m.played_at.split('T')[0];
+    });
 
     const byDate: Record<string, any[]> = {};
-    (data as any[]).forEach(row => {
-      const date = (row.matches as any).played_at.split('T')[0];
+    (stats as any[]).forEach(row => {
+      const date = matchDateById[row.match_id];
+      if (!date) return;
       if (!byDate[date]) byDate[date] = [];
       byDate[date].push(row);
     });
 
-    return Object.entries(byDate)
-      .sort(([a], [b]) => b.localeCompare(a))
-      .map(([date, rows]) => {
-        const byPlayer: Record<string, { player_name: string; runs: number; balls: number; fours: number; sixes: number; wickets: number }> = {};
-        rows.forEach(row => {
-          const name = row.player_name;
-          if (!byPlayer[name]) byPlayer[name] = { player_name: name, runs: 0, balls: 0, fours: 0, sixes: 0, wickets: 0 };
-          byPlayer[name].runs += row.runs_scored ?? 0;
-          byPlayer[name].balls += row.balls_faced ?? 0;
-          byPlayer[name].fours += row.fours ?? 0;
-          byPlayer[name].sixes += row.sixes ?? 0;
-          byPlayer[name].wickets += row.wickets_taken ?? 0;
+    const cricketOversToBalls = (ov: any) => {
+      const o = parseFloat(ov) || 0;
+      return Math.floor(o) * 6 + Math.round((o % 1) * 10);
+    };
+
+    // Process chronologically to track each player's previous session stats
+    const chronologicalDates = Object.keys(byDate).sort();
+    type PrevStat = { runs: number; sr: number; wickets: number; economy: number };
+    const lastStatByPlayer: Record<string, PrevStat> = {};
+    const results: DayAward[] = [];
+
+    for (const date of chronologicalDates) {
+      const rows = byDate[date];
+      const byPlayer: Record<string, { player_name: string; runs: number; balls: number; fours: number; sixes: number; wickets: number; runs_conceded: number; balls_bowled: number }> = {};
+      rows.forEach(row => {
+        const name = row.player_name;
+        if (!byPlayer[name]) byPlayer[name] = { player_name: name, runs: 0, balls: 0, fours: 0, sixes: 0, wickets: 0, runs_conceded: 0, balls_bowled: 0 };
+        byPlayer[name].runs += Number(row.runs_scored) || 0;
+        byPlayer[name].balls += Number(row.balls_faced) || 0;
+        byPlayer[name].fours += Number(row.fours) || 0;
+        byPlayer[name].sixes += Number(row.sixes) || 0;
+        byPlayer[name].wickets += Number(row.wickets_taken) || 0;
+        byPlayer[name].runs_conceded += Number(row.runs_conceded) || 0;
+        byPlayer[name].balls_bowled += cricketOversToBalls(row.overs_bowled);
+      });
+
+      const players = Object.values(byPlayer);
+      const batters = players.filter(p => p.balls > 0).sort((a, b) => (b.runs / b.balls) - (a.runs / a.balls));
+      const bySixes = [...players].sort((a, b) => b.sixes - a.sixes);
+      const byFours = [...players].sort((a, b) => b.fours - a.fours);
+      const economy = (p: typeof players[0]) => p.balls_bowled > 0 ? Math.round((p.runs_conceded / p.balls_bowled) * 60) / 10 : 999;
+      const byWickets = [...players]
+        .filter(p => p.wickets > 0)
+        .sort((a, b) => {
+          if (b.wickets !== a.wickets) return b.wickets - a.wickets;
+          return a.runs_conceded - b.runs_conceded;
         });
 
-        const players = Object.values(byPlayer);
-        const batters = players.filter(p => p.balls > 0).sort((a, b) => (b.runs / b.balls) - (a.runs / a.balls));
-        const bySixes = [...players].sort((a, b) => b.sixes - a.sixes);
-        const byFours = [...players].sort((a, b) => b.fours - a.fours);
-        const byWickets = [...players].sort((a, b) => b.wickets - a.wickets);
+      // Comeback: composite score across batting + bowling improvement vs last session
+      let bestScore = 0;
+      let comebackPlayer: DayAward['comeback_player'] = null;
 
-        return {
-          date,
-          super_striker: batters[0] ? { player_name: batters[0].player_name, sr: Math.round(batters[0].runs / batters[0].balls * 1000) / 10, runs: batters[0].runs } : null,
-          most_sixes: bySixes[0]?.sixes > 0 ? { player_name: bySixes[0].player_name, sixes: bySixes[0].sixes } : null,
-          most_fours: byFours[0]?.fours > 0 ? { player_name: byFours[0].player_name, fours: byFours[0].fours } : null,
-          most_wickets: byWickets[0]?.wickets > 0 ? { player_name: byWickets[0].player_name, wickets: byWickets[0].wickets } : null,
-        };
+      players.forEach(p => {
+        const prev = lastStatByPlayer[p.player_name];
+        if (!prev) return; // no previous session to compare
+
+        const wicketImp = p.wickets - prev.wickets;
+        const battingScore = (prev.runs < 15 && p.runs >= 30) ? (p.runs - prev.runs) : 0;
+        const bowlingScore = wicketImp > 0 ? wicketImp * 15 : 0;
+        const score = battingScore + bowlingScore;
+
+        if (score > bestScore) {
+          bestScore = score;
+          comebackPlayer = {
+            player_name: p.player_name,
+            runs: p.runs,
+            wickets: p.wickets,
+            prev_runs: prev.runs,
+            prev_wickets: prev.wickets,
+            score: Math.round(score),
+          };
+        }
       });
+
+      // Update last stats for all players who appeared today
+      players.forEach(p => {
+        const todaySR = p.balls > 0 ? (p.runs / p.balls) * 100 : 0;
+        const todayEco = p.balls_bowled > 0 ? (p.runs_conceded / p.balls_bowled) * 6 : 0;
+        if (p.balls > 0 || p.balls_bowled > 0) {
+          lastStatByPlayer[p.player_name] = { runs: p.runs, sr: todaySR, wickets: p.wickets, economy: todayEco };
+        }
+      });
+
+      results.push({
+        date,
+        super_striker: batters[0] ? { player_name: batters[0].player_name, sr: Math.round(batters[0].runs / batters[0].balls * 1000) / 10, runs: batters[0].runs } : null,
+        most_sixes: bySixes[0]?.sixes > 0 ? { player_name: bySixes[0].player_name, sixes: bySixes[0].sixes } : null,
+        most_fours: byFours[0]?.fours > 0 ? { player_name: byFours[0].player_name, fours: byFours[0].fours } : null,
+        most_wickets: byWickets[0] ? { player_name: byWickets[0].player_name, wickets: byWickets[0].wickets, economy: Math.round(economy(byWickets[0]) * 10) / 10 } : null,
+        comeback_player: comebackPlayer,
+      });
+    }
+
+    return results.reverse();
   } catch {
     return [];
   }
