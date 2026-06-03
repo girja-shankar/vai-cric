@@ -309,6 +309,63 @@ export const fetchTodayPlayerStats = async (): Promise<{ date: string; players: 
   }
 };
 
+export type DayAward = {
+  date: string;
+  super_striker: { player_name: string; sr: number; runs: number } | null;
+  most_sixes: { player_name: string; sixes: number } | null;
+  most_fours: { player_name: string; fours: number } | null;
+  most_wickets: { player_name: string; wickets: number } | null;
+};
+
+export const fetchDayWiseAwards = async (): Promise<DayAward[]> => {
+  if (!supabase) return [];
+  try {
+    const { data } = await supabase
+      .from('match_player_stats')
+      .select('player_name, runs_scored, balls_faced, fours, sixes, wickets_taken, matches!inner(played_at)');
+
+    if (!data || data.length === 0) return [];
+
+    const byDate: Record<string, any[]> = {};
+    (data as any[]).forEach(row => {
+      const date = (row.matches as any).played_at.split('T')[0];
+      if (!byDate[date]) byDate[date] = [];
+      byDate[date].push(row);
+    });
+
+    return Object.entries(byDate)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([date, rows]) => {
+        const byPlayer: Record<string, { player_name: string; runs: number; balls: number; fours: number; sixes: number; wickets: number }> = {};
+        rows.forEach(row => {
+          const name = row.player_name;
+          if (!byPlayer[name]) byPlayer[name] = { player_name: name, runs: 0, balls: 0, fours: 0, sixes: 0, wickets: 0 };
+          byPlayer[name].runs += row.runs_scored ?? 0;
+          byPlayer[name].balls += row.balls_faced ?? 0;
+          byPlayer[name].fours += row.fours ?? 0;
+          byPlayer[name].sixes += row.sixes ?? 0;
+          byPlayer[name].wickets += row.wickets_taken ?? 0;
+        });
+
+        const players = Object.values(byPlayer);
+        const batters = players.filter(p => p.balls > 0).sort((a, b) => (b.runs / b.balls) - (a.runs / a.balls));
+        const bySixes = [...players].sort((a, b) => b.sixes - a.sixes);
+        const byFours = [...players].sort((a, b) => b.fours - a.fours);
+        const byWickets = [...players].sort((a, b) => b.wickets - a.wickets);
+
+        return {
+          date,
+          super_striker: batters[0] ? { player_name: batters[0].player_name, sr: Math.round(batters[0].runs / batters[0].balls * 1000) / 10, runs: batters[0].runs } : null,
+          most_sixes: bySixes[0]?.sixes > 0 ? { player_name: bySixes[0].player_name, sixes: bySixes[0].sixes } : null,
+          most_fours: byFours[0]?.fours > 0 ? { player_name: byFours[0].player_name, fours: byFours[0].fours } : null,
+          most_wickets: byWickets[0]?.wickets > 0 ? { player_name: byWickets[0].player_name, wickets: byWickets[0].wickets } : null,
+        };
+      });
+  } catch {
+    return [];
+  }
+};
+
 // --- Player Registry ---
 export type RegisteredPlayer = {
   id: string;

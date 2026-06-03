@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Trophy, Target, Flame, TrendingUp, Award, Calendar } from 'lucide-react';
-import { fetchPlayerStats, fetchMonthlyStats, fetchTodayPlayerStats, supabase, TodayPlayerStat } from '../lib/supabase';
+import { ArrowLeft, Trophy, Target, Flame, TrendingUp, Award, Calendar, Zap, Star } from 'lucide-react';
+import { fetchPlayerStats, fetchMonthlyStats, fetchTodayPlayerStats, fetchDayWiseAwards, supabase, TodayPlayerStat, DayAward } from '../lib/supabase';
 
 type CareerStat = {
   player_name: string;
@@ -25,7 +25,7 @@ type MonthlyStat = {
   best_score: number;
 };
 
-type Tab = 'batting' | 'bowling' | 'monthly';
+type Tab = 'batting' | 'bowling' | 'monthly' | 'awards';
 
 export default function StatsScreen({ onBack }: { onBack: () => void }) {
   const [stats, setStats] = useState<CareerStat[]>([]);
@@ -194,13 +194,16 @@ export default function StatsScreen({ onBack }: { onBack: () => void }) {
                             <div className="flex items-center gap-3">
                               <div>
                                 <h3 className="text-lg font-black text-amber-900">{sorted[0].player_name}</h3>
-                                <p className="text-xs text-amber-700">SR: {sorted[0].balls_faced > 0 ? (sorted[0].runs_scored * 100 / sorted[0].balls_faced).toFixed(1) : '0.0'}</p>
+                                <div className="flex items-baseline gap-1">
+                                  <span className="text-2xl font-black text-amber-800">{sorted[0].runs_scored}</span>
+                                  <span className="text-[10px] text-amber-600">runs</span>
+                                </div>
                               </div>
                               <img src="/tata-sierra.png" alt="Tata Sierra" className="h-16 w-auto object-contain" />
                             </div>
                             <div className="text-right">
-                              <div className="text-2xl font-black text-amber-800">{sorted[0].runs_scored}</div>
-                              <div className="text-[10px] text-amber-600">runs</div>
+                              <div className="text-2xl font-black text-amber-800">{sorted[0].balls_faced > 0 ? (sorted[0].runs_scored * 100 / sorted[0].balls_faced).toFixed(1) : '0.0'}</div>
+                              <div className="text-[10px] text-amber-600">SR</div>
                             </div>
                           </div>
                         </div>
