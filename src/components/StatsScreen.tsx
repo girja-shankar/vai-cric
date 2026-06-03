@@ -615,147 +615,67 @@ export default function StatsScreen({ onBack }: { onBack: () => void }) {
                         {(() => {
                           const cards = [
                             day.super_striker ? (
-                              <div
-                                key="ss"
-                                className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-3 text-white shadow-md flex items-center justify-between"
-                              >
+                              <div key="ss" className="bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-300 rounded-2xl p-3 flex items-center justify-between">
                                 <div>
                                   <div className="flex items-center gap-1.5 mb-1">
-                                    <div className="bg-white/20 rounded-full p-1">
-                                      <Zap className="w-3 h-3 text-white" />
-                                    </div>
-                                    <span className="text-xs font-black tracking-wide text-white uppercase">
-                                      Sierra Super Striker
-                                    </span>
+                                    <span className="text-xs font-black tracking-wide text-amber-700 uppercase">Sierra Super Striker</span>
                                   </div>
-                                  <p className="text-base font-black">
-                                    {day.super_striker.player_name}
-                                  </p>
-                                  <p className="text-[10px] text-amber-100">
-                                    {day.super_striker.runs} runs
-                                  </p>
+                                  <p className="text-base font-black text-amber-900">{day.super_striker.player_name}</p>
+                                  <p className="text-[10px] text-amber-500">{day.super_striker.runs} runs</p>
                                 </div>
-                                <div className="text-right">
-                                  <div className="flex items-baseline gap-1 justify-end">
-                                    <span className="text-2xl font-black">
-                                      {day.super_striker.sr}
-                                    </span>
-                                  </div>
-                                </div>
+                                <span className="text-2xl font-black text-amber-700">{day.super_striker.sr}</span>
                               </div>
                             ) : null,
                             day.most_sixes ? (
-                              <div
-                                key="ms"
-                                className="bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl p-3 text-white shadow-md flex items-center justify-between"
-                              >
+                              <div key="ms" className="bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-300 rounded-2xl p-3 flex items-center justify-between">
                                 <div>
                                   <div className="flex items-center gap-1.5 mb-1">
-                                    <div className="bg-white/20 rounded-full p-1">
-                                      <Star className="w-3 h-3 text-white" />
-                                    </div>
-                                    <span className="text-xs font-black tracking-wide text-white uppercase">
-                                      Angel Super Sixes
-                                    </span>
+                                    <span className="text-xs font-black tracking-wide text-indigo-700 uppercase">Angel One Super Sixes</span>
                                   </div>
-                                  <p className="text-base font-black">
-                                    {day.most_sixes.player_name}
-                                  </p>
+                                  <p className="text-base font-black text-indigo-900">{day.most_sixes.player_name}</p>
                                 </div>
-                                <span className="text-2xl font-black">
-                                  {day.most_sixes.sixes}
-                                </span>
+                                <span className="text-2xl font-black text-indigo-700">{day.most_sixes.sixes}</span>
                               </div>
                             ) : null,
                             day.most_fours ? (
-                              <div
-                                key="mf"
-                                className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-3 text-white shadow-md flex items-center justify-between"
-                              >
+                              <div key="mf" className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-300 rounded-2xl p-3 flex items-center justify-between">
                                 <div>
                                   <div className="flex items-center gap-1.5 mb-1">
-                                    <div className="bg-white/20 rounded-full p-1">
-                                      <Trophy className="w-3 h-3 text-white" />
-                                    </div>
-                                    <span className="text-xs font-black tracking-wide text-white uppercase">
-                                      RuPay On-The-Go 4s
-                                    </span>
+                                    <span className="text-xs font-black tracking-wide text-emerald-700 uppercase">RuPay On-The-Go 4s</span>
                                   </div>
-                                  <p className="text-base font-black">
-                                    {day.most_fours.player_name}
-                                  </p>
+                                  <p className="text-base font-black text-emerald-900">{day.most_fours.player_name}</p>
                                 </div>
-                                <span className="text-2xl font-black">
-                                  {day.most_fours.fours}
-                                </span>
+                                <span className="text-2xl font-black text-emerald-700">{day.most_fours.fours}</span>
                               </div>
                             ) : null,
                             day.comeback_player ? (
-                              <div
-                                key="cb"
-                                className="bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl p-3 text-white shadow-md flex items-center justify-between"
-                              >
+                              <div key="cb" className="bg-gradient-to-r from-cyan-50 to-cyan-100 border border-cyan-300 rounded-2xl p-3 flex items-center justify-between">
                                 <div>
                                   <div className="flex items-center gap-1.5 mb-1">
-                                    <div className="bg-white/20 rounded-full p-1">
-                                      <TrendingUp className="w-3 h-3 text-white" />
-                                    </div>
-                                    <span className="text-xs font-black tracking-wide text-white uppercase">
-                                      Comeback Player
-                                    </span>
+                                    <span className="text-xs font-black tracking-wide text-cyan-700 uppercase">Comeback Player</span>
                                   </div>
-                                  <p className="text-base font-black">
-                                    {day.comeback_player.player_name}
-                                  </p>
+                                  <p className="text-base font-black text-cyan-900">{day.comeback_player.player_name}</p>
                                 </div>
                                 <div className="text-right flex flex-col gap-0.5 items-end">
-                                  {day.comeback_player.runs >
-                                    day.comeback_player.prev_runs && (
-                                    <p className="text-[11px] font-semibold text-cyan-100">
-                                      {day.comeback_player.prev_runs}→
-                                      {day.comeback_player.runs} runs
-                                    </p>
+                                  {day.comeback_player.runs > day.comeback_player.prev_runs && (
+                                    <p className="text-[11px] font-semibold text-cyan-600">{day.comeback_player.prev_runs}→{day.comeback_player.runs} runs</p>
                                   )}
-                                  {day.comeback_player.wickets >
-                                    day.comeback_player.prev_wickets && (
-                                    <p className="text-[11px] font-semibold text-cyan-100">
-                                      {day.comeback_player.prev_wickets}→
-                                      {day.comeback_player.wickets} wkts
-                                    </p>
+                                  {day.comeback_player.wickets > day.comeback_player.prev_wickets && (
+                                    <p className="text-[11px] font-semibold text-cyan-600">{day.comeback_player.prev_wickets}→{day.comeback_player.wickets} wkts</p>
                                   )}
                                 </div>
                               </div>
                             ) : null,
                             day.most_wickets ? (
-                              <div
-                                key="mw"
-                                className="bg-gradient-to-br from-rose-500 to-pink-600 rounded-2xl p-3 text-white shadow-md flex items-center justify-between"
-                              >
+                              <div key="mw" className="bg-gradient-to-r from-rose-50 to-rose-100 border border-rose-300 rounded-2xl p-3 flex items-center justify-between">
                                 <div>
                                   <div className="flex items-center gap-1.5 mb-1">
-                                    <div className="bg-white/20 rounded-full p-1">
-                                      <Target className="w-3 h-3 text-white" />
-                                    </div>
-                                    <span className="text-xs font-black tracking-wide text-white uppercase">
-                                      Curvv Most Wicket
-                                    </span>
+                                    <span className="text-xs font-black tracking-wide text-rose-700 uppercase">Curvv Most Wicket</span>
                                   </div>
-                                  <p className="text-base font-black">
-                                    {day.most_wickets.player_name}
-                                  </p>
-                                  <p className="text-[10px] text-rose-100">
-                                    Econ{" "}
-                                    {day.most_wickets.economy > 0 &&
-                                    day.most_wickets.economy < 999
-                                      ? day.most_wickets.economy.toFixed(1)
-                                      : "—"}
-                                  </p>
+                                  <p className="text-base font-black text-rose-900">{day.most_wickets.player_name}</p>
+                                  <p className="text-[10px] text-rose-500">Econ {day.most_wickets.economy > 0 && day.most_wickets.economy < 999 ? day.most_wickets.economy.toFixed(1) : "—"}</p>
                                 </div>
-                                <div className="flex items-baseline gap-1">
-                                  <span className="text-2xl font-black">
-                                    {day.most_wickets.wickets}
-                                  </span>
-                                </div>
+                                <span className="text-2xl font-black text-rose-700">{day.most_wickets.wickets}</span>
                               </div>
                             ) : null,
                           ].filter(Boolean) as React.ReactElement[];
