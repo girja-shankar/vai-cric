@@ -12,12 +12,13 @@ import {
 } from "lucide-react";
 import {
   fetchPlayerStats,
-  fetchMonthlyStats,
   fetchTodayPlayerStats,
   fetchDayWiseAwards,
+  fetchCaptainStats,
   supabase,
   TodayPlayerStat,
   DayAward,
+  CaptainStat,
 } from "../lib/supabase";
 
 type CareerStat = {
@@ -34,20 +35,11 @@ type CareerStat = {
   economy_rate: number;
 };
 
-type MonthlyStat = {
-  player_name: string;
-  month: string;
-  matches: number;
-  runs: number;
-  wickets: number;
-  best_score: number;
-};
-
-type Tab = "batting" | "bowling" | "monthly" | "awards";
+type Tab = "batting" | "bowling" | "awards" | "captains";
 
 export default function StatsScreen({ onBack }: { onBack: () => void }) {
   const [stats, setStats] = useState<CareerStat[]>([]);
-  const [monthlyStats, setMonthlyStats] = useState<MonthlyStat[]>([]);
+  const [captainStats, setCaptainStats] = useState<CaptainStat[]>([]);
   const [todayStats, setTodayStats] = useState<{
     date: string;
     players: TodayPlayerStat[];
@@ -65,14 +57,11 @@ export default function StatsScreen({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     (async () => {
       if (supabase) {
-        const [career, monthly] = await Promise.all([
-          fetchPlayerStats(),
-          fetchMonthlyStats(),
-        ]);
+        const career = await fetchPlayerStats();
         setStats(career as CareerStat[]);
-        setMonthlyStats(monthly as MonthlyStat[]);
         fetchTodayPlayerStats().then(setTodayStats);
         fetchDayWiseAwards().then(setDayAwards);
+        fetchCaptainStats().then(setCaptainStats);
       }
       setLoading(false);
     })();
@@ -82,20 +71,6 @@ export default function StatsScreen({ onBack }: { onBack: () => void }) {
   const bowlingLeaders = [...stats]
     .filter((s) => s.total_wickets > 0)
     .sort((a, b) => b.total_wickets - a.total_wickets);
-
-  // Group monthly stats by month
-  const monthlyGrouped: Record<string, MonthlyStat[]> = {};
-  monthlyStats.forEach((s) => {
-    if (!monthlyGrouped[s.month]) monthlyGrouped[s.month] = [];
-    monthlyGrouped[s.month].push(s);
-  });
-  const sortedMonths = Object.keys(monthlyGrouped).sort().reverse();
-
-  const formatMonth = (m: string) => {
-    const [year, month] = m.split("-");
-    const date = new Date(parseInt(year), parseInt(month) - 1);
-    return date.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
-  };
 
   return (
     <div className="h-full flex flex-col bg-slate-50 min-h-0">
@@ -117,7 +92,7 @@ export default function StatsScreen({ onBack }: { onBack: () => void }) {
 
         {/* Tabs */}
         <div className="flex gap-1 bg-indigo-700/50 rounded-xl p-1">
-          {(["batting", "bowling", "awards", "monthly"] as const).map((t) => (
+          {(["batting", "bowling", "awards", "captains"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -735,63 +710,60 @@ export default function StatsScreen({ onBack }: { onBack: () => void }) {
               </div>
             )}
 
-            {/* Monthly Tab */}
-            {tab === "monthly" && (
-              <div className="space-y-3">
-                {sortedMonths.length === 0 ? (
-                  <div className="text-center py-8">
-                    <TrendingUp className="w-10 h-10 text-slate-200 mx-auto mb-2" />
-                    <p className="text-slate-400 text-sm">
-                      No monthly data yet
-                    </p>
+            {/* Captains Tab */}
+            {tab === "captains" && (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                {captainStats.length === 0 ? (
+                  <div className="text-center py-10">
+                    <Trophy className="w-10 h-10 text-slate-200 mx-auto mb-2" />
+                    <p className="text-slate-400 text-sm">No captain data yet</p>
                   </div>
                 ) : (
-                  sortedMonths.map((month) => {
-                    const players = monthlyGrouped[month].sort(
-                      (a, b) => b.runs - a.runs,
-                    );
-                    return (
-                      <div
-                        key={month}
-                        className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden"
-                      >
-                        <div className="bg-indigo-50 px-3 py-2 border-b border-indigo-100">
-                          <h3 className="text-xs font-bold text-indigo-700">
-                            {formatMonth(month)}
-                          </h3>
-                        </div>
-                        <div className="divide-y divide-slate-50">
-                          {players.map((s, i) => (
-                            <div
-                              key={i}
-                              className="px-3 py-2 flex justify-between items-center"
-                            >
-                              <span className="text-xs font-semibold text-slate-800">
-                                {s.player_name}
-                              </span>
-                              <div className="flex gap-4 text-xs font-mono">
-                                <span className="text-slate-500">
-                                  {s.matches}m
-                                </span>
-                                <span className="font-bold text-slate-800">
-                                  {s.runs}r
-                                </span>
-                                <span className="text-rose-600">
-                                  {s.wickets}w
-                                </span>
-                                <span className="text-amber-600">
-                                  HS:{s.best_score}
-                                </span>
-                              </div>
+                  <div className="grid grid-cols-[1fr_1px_auto_auto_auto_1px_auto_auto_auto]">
+
+                    {/* Header cells */}
+                    <div className="bg-indigo-600 px-3 py-2.5"><span className="text-[10px] font-bold text-indigo-200 uppercase tracking-wide">Captain</span></div>
+                    <div className="bg-indigo-400/60" />
+                    <div className="bg-indigo-600 py-2.5 flex items-center justify-center w-8"><span className="text-[10px] font-bold text-indigo-200 uppercase tracking-wide">M</span></div>
+                    <div className="bg-indigo-600 py-2.5 flex items-center justify-center w-8"><span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wide">W</span></div>
+                    <div className="bg-indigo-600 py-2.5 flex items-center justify-center w-8 pr-2"><span className="text-[10px] font-bold text-rose-300 uppercase tracking-wide">L</span></div>
+                    <div className="bg-indigo-400/60" />
+                    <div className="bg-indigo-600 py-2.5 flex items-center justify-center w-8 pl-2"><span className="text-[10px] font-bold text-indigo-200 uppercase tracking-wide">T</span></div>
+                    <div className="bg-indigo-600 py-2.5 flex items-center justify-center w-8"><span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wide">TW</span></div>
+                    <div className="bg-indigo-600 py-2.5 pr-3 flex items-center justify-center w-8"><span className="text-[10px] font-bold text-rose-300 uppercase tracking-wide">TL</span></div>
+
+                    {/* Data rows */}
+                    {captainStats.map((c, i) => {
+                      const winRate = c.matches > 0 ? Math.round((c.wins / c.matches) * 100) : 0;
+                      const bg = i % 2 === 0 ? "bg-white" : "bg-slate-50/60";
+                      const dividerBg = "bg-slate-200";
+                      return (
+                        <React.Fragment key={i}>
+                          <div className={`${bg} px-3 py-3 border-t border-slate-100`}>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="text-xs font-bold truncate text-slate-800">{c.captain_name}</span>
+                              <span className={`text-[9px] font-bold ml-auto shrink-0 ${winRate >= 50 ? "text-emerald-600" : "text-amber-500"}`}>{winRate}%</span>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })
+                            <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${i === 0 ? "bg-emerald-400" : "bg-amber-400"}`} style={{ width: `${winRate}%` }} />
+                            </div>
+                          </div>
+                          <div className={`${dividerBg} border-t border-slate-100`} />
+                          <div className={`${bg} border-t border-slate-100 flex items-center justify-center w-8`}><span className="text-xs text-slate-400">{c.matches}</span></div>
+                          <div className={`${bg} border-t border-slate-100 flex items-center justify-center w-8`}><span className="text-xs font-bold text-emerald-600">{c.wins}</span></div>
+                          <div className={`${bg} border-t border-slate-100 flex items-center justify-center w-8 pr-2`}><span className="text-xs font-bold text-rose-500">{c.losses}</span></div>
+                          <div className={`${dividerBg} border-t border-slate-100`} />
+                          <div className={`${bg} border-t border-slate-100 flex items-center justify-center w-8 pl-2`}><span className="text-xs text-slate-400">{c.tournaments || 0}</span></div>
+                          <div className={`${bg} border-t border-slate-100 flex items-center justify-center w-8`}><span className="text-xs font-bold text-emerald-600">{c.tournament_wins || 0}</span></div>
+                          <div className={`${bg} border-t border-slate-100 pr-3 flex items-center justify-center w-8`}><span className="text-xs font-bold text-rose-500">{c.tournament_losses || 0}</span></div>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
+
           </>
         )}
       </div>

@@ -230,10 +230,84 @@ export const fetchRecentMatches = async (limit = 20) => {
   return data || [];
 };
 
-export const fetchMonthlyStats = async () => {
+export type CaptainStat = {
+  captain_name: string;
+  matches: number;
+  wins: number;
+  losses: number;
+  ties: number;
+  tournaments: number;
+  tournament_wins: number;
+  tournament_losses: number;
+};
+
+export const fetchCaptainStats = async (): Promise<CaptainStat[]> => {
   if (!supabase) return [];
-  const { data } = await supabase.from('monthly_player_stats').select('*').order('month', { ascending: false });
-  return data || [];
+
+  const [{ data: matchData }, { data: tournaments }, { data: tournamentMatches }] = await Promise.all([
+    supabase.from('matches').select('winner, team1_name, team2_name, full_state').order('played_at', { ascending: false }),
+    supabase.from('tournaments').select('id'),
+    supabase.from('tournament_matches').select('tournament_id, team1, team2, winner'),
+  ]);
+
+  const map: Record<string, CaptainStat> = {};
+  const captainForTeam: Record<string, string> = {};
+
+  for (const match of (matchData || []) as any[]) {
+    const teams: Array<{ name: string; players: { id: string; name: string }[]; captainId?: string | null }> =
+      match.full_state?.teams ?? [];
+
+    for (const team of teams) {
+      if (!team.captainId) continue;
+      const captain = team.players.find((p: any) => p.id === team.captainId);
+      if (!captain) continue;
+      const name = captain.name;
+      captainForTeam[team.name] = name;
+      if (!map[name]) map[name] = { captain_name: name, matches: 0, wins: 0, losses: 0, ties: 0, tournaments: 0, tournament_wins: 0, tournament_losses: 0 };
+      map[name].matches++;
+      if (match.winner === 'tie') map[name].ties++;
+      else if (match.winner === team.name) map[name].wins++;
+      else map[name].losses++;
+    }
+  }
+
+  // Group tournament matches by tournament
+  const tmByTournament: Record<string, any[]> = {};
+  for (const tm of (tournamentMatches || []) as any[]) {
+    if (!tmByTournament[tm.tournament_id]) tmByTournament[tm.tournament_id] = [];
+    tmByTournament[tm.tournament_id].push(tm);
+  }
+
+  for (const tournament of (tournaments || []) as any[]) {
+    const tms = tmByTournament[tournament.id] || [];
+    if (tms.length === 0) continue;
+
+    // Build points to find tournament winner team
+    const pts: Record<string, number> = {};
+    for (const tm of tms) {
+      if (!tm.winner) continue;
+      [tm.team1, tm.team2].forEach((t: string) => { if (pts[t] == null) pts[t] = 0; });
+      if (tm.winner === 'tie') { pts[tm.team1]++; pts[tm.team2]++; }
+      else if (tm.winner === tm.team1) pts[tm.team1] += 2;
+      else pts[tm.team2] += 2;
+    }
+
+    const teams = Object.keys(pts);
+    if (teams.length === 0) continue;
+    const maxPts = Math.max(...Object.values(pts));
+    const winnerTeam = teams.find(t => pts[t] === maxPts);
+
+    for (const team of teams) {
+      const captainName = captainForTeam[team];
+      if (!captainName) continue;
+      if (!map[captainName]) map[captainName] = { captain_name: captainName, matches: 0, wins: 0, losses: 0, ties: 0, tournament_wins: 0, tournament_losses: 0 };
+      map[captainName].tournaments++;
+      if (team === winnerTeam) map[captainName].tournament_wins++;
+      else map[captainName].tournament_losses++;
+    }
+  }
+
+  return Object.values(map).sort((a, b) => b.wins - a.wins);
 };
 
 export type TodayPlayerStat = {
