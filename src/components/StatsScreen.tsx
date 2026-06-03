@@ -183,6 +183,28 @@ export default function StatsScreen({ onBack }: { onBack: () => void }) {
                     const [y, m, d] = todayStats.date.split('-');
                     const label = new Date(+y, +m - 1, +d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
                     return (
+                      <>
+                      {sorted[0] && (
+                        <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-2xl p-4 border border-amber-200 mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Award className="w-5 h-5 text-amber-600" />
+                            <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Tata Sierra Super Striker of the Day · {label}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                              <div>
+                                <h3 className="text-lg font-black text-amber-900">{sorted[0].player_name}</h3>
+                                <p className="text-xs text-amber-700">SR: {sorted[0].balls_faced > 0 ? (sorted[0].runs_scored * 100 / sorted[0].balls_faced).toFixed(1) : '0.0'}</p>
+                              </div>
+                              <img src="/tata-sierra.png" alt="Tata Sierra" className="h-16 w-auto object-contain" />
+                            </div>
+                            <div className="text-right">
+                              <div className="text-2xl font-black text-amber-800">{sorted[0].runs_scored}</div>
+                              <div className="text-[10px] text-amber-600">runs</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                         <div className="bg-amber-50 px-3 py-2 border-b border-amber-100 flex items-center gap-2">
                           <Calendar className="w-3.5 h-3.5 text-amber-500" />
@@ -212,6 +234,7 @@ export default function StatsScreen({ onBack }: { onBack: () => void }) {
                           </div>
                         ))}
                       </div>
+                      </>
                     );
                   })()
                 )}
