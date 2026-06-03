@@ -615,44 +615,33 @@ export default function StatsScreen({ onBack }: { onBack: () => void }) {
                         {(() => {
                           const cards = [
                             day.super_striker ? (
-                              <div key="ss" className="bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-300 rounded-2xl p-3 flex items-center justify-between">
+                              <div
+                                key="ss"
+                                className="bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-300 rounded-2xl p-3 flex items-center justify-between"
+                              >
                                 <div>
                                   <div className="flex items-center gap-1.5 mb-1">
-                                    <span className="text-xs font-black tracking-wide text-amber-700 uppercase">Sierra Super Striker</span>
+                                    <span className="text-xs font-black tracking-wide text-amber-700 uppercase">
+                                      Sierra Super Striker
+                                    </span>
                                   </div>
-                                  <p className="text-base font-black text-amber-900">{day.super_striker.player_name}</p>
-                                  <p className="text-[10px] text-amber-500">{day.super_striker.runs} runs</p>
+                                  <p className="text-base font-black text-amber-900">
+                                    {day.super_striker.player_name}
+                                  </p>
+                                  <p className="text-[10px] text-amber-500">
+                                    {day.super_striker.runs} runs
+                                  </p>
                                 </div>
-                                <span className="text-2xl font-black text-amber-700">{day.super_striker.sr}</span>
-                              </div>
-                            ) : null,
-                            day.most_sixes ? (
-                              <div key="ms" className="bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-300 rounded-2xl p-3 flex items-center justify-between">
-                                <div>
-                                  <div className="flex items-center gap-1.5 mb-1">
-                                    <span className="text-xs font-black tracking-wide text-indigo-700 uppercase">Angel One Super Sixes</span>
-                                  </div>
-                                  <p className="text-base font-black text-indigo-900">{day.most_sixes.player_name}</p>
-                                </div>
-                                <span className="text-2xl font-black text-indigo-700">{day.most_sixes.sixes}</span>
-                              </div>
-                            ) : null,
-                            day.most_fours ? (
-                              <div key="mf" className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-300 rounded-2xl p-3 flex items-center justify-between">
-                                <div>
-                                  <div className="flex items-center gap-1.5 mb-1">
-                                    <span className="text-xs font-black tracking-wide text-emerald-700 uppercase">RuPay On-The-Go 4s</span>
-                                  </div>
-                                  <p className="text-base font-black text-emerald-900">{day.most_fours.player_name}</p>
-                                </div>
-                                <span className="text-2xl font-black text-emerald-700">{day.most_fours.fours}</span>
+                                <span className="text-2xl font-black text-amber-700">
+                                  {day.super_striker.sr}
+                                </span>
                               </div>
                             ) : null,
                             day.comeback_player ? (
                               <div key="cb" className="bg-gradient-to-r from-cyan-50 to-cyan-100 border border-cyan-300 rounded-2xl p-3 flex items-center justify-between">
                                 <div>
                                   <div className="flex items-center gap-1.5 mb-1">
-                                    <span className="text-xs font-black tracking-wide text-cyan-700 uppercase">Comeback Player</span>
+                                    <span className="text-xs font-black tracking-wide text-cyan-700 uppercase">ICIC Comeback Player</span>
                                   </div>
                                   <p className="text-base font-black text-cyan-900">{day.comeback_player.player_name}</p>
                                 </div>
@@ -666,16 +655,71 @@ export default function StatsScreen({ onBack }: { onBack: () => void }) {
                                 </div>
                               </div>
                             ) : null,
-                            day.most_wickets ? (
-                              <div key="mw" className="bg-gradient-to-r from-rose-50 to-rose-100 border border-rose-300 rounded-2xl p-3 flex items-center justify-between">
+                            day.most_sixes ? (
+                              <div
+                                key="ms"
+                                className="bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-300 rounded-2xl p-3 flex items-center justify-between"
+                              >
                                 <div>
                                   <div className="flex items-center gap-1.5 mb-1">
-                                    <span className="text-xs font-black tracking-wide text-rose-700 uppercase">Curvv Most Wicket</span>
+                                    <span className="text-xs font-black tracking-wide text-indigo-700 uppercase">
+                                      Angel-One Super Sixes
+                                    </span>
                                   </div>
-                                  <p className="text-base font-black text-rose-900">{day.most_wickets.player_name}</p>
-                                  <p className="text-[10px] text-rose-500">Econ {day.most_wickets.economy > 0 && day.most_wickets.economy < 999 ? day.most_wickets.economy.toFixed(1) : "—"}</p>
+                                  <p className="text-base font-black text-indigo-900">
+                                    {day.most_sixes.player_name}
+                                  </p>
                                 </div>
-                                <span className="text-2xl font-black text-rose-700">{day.most_wickets.wickets}</span>
+                                <span className="text-2xl font-black text-indigo-700">
+                                  {day.most_sixes.sixes}
+                                </span>
+                              </div>
+                            ) : null,
+                            day.most_fours ? (
+                              <div
+                                key="mf"
+                                className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-300 rounded-2xl p-3 flex items-center justify-between"
+                              >
+                                <div>
+                                  <div className="flex items-center gap-1.5 mb-1">
+                                    <span className="text-xs font-black tracking-wide text-emerald-700 uppercase">
+                                      RuPay On-The-Go 4s
+                                    </span>
+                                  </div>
+                                  <p className="text-base font-black text-emerald-900">
+                                    {day.most_fours.player_name}
+                                  </p>
+                                </div>
+                                <span className="text-2xl font-black text-emerald-700">
+                                  {day.most_fours.fours}
+                                </span>
+                              </div>
+                            ) : null,
+                            day.most_wickets ? (
+                              <div
+                                key="mw"
+                                className="bg-gradient-to-r from-rose-50 to-rose-100 border border-rose-300 rounded-2xl p-3 flex items-center justify-between"
+                              >
+                                <div>
+                                  <div className="flex items-center gap-1.5 mb-1">
+                                    <span className="text-xs font-black tracking-wide text-rose-700 uppercase">
+                                      Curvv Most Wicket
+                                    </span>
+                                  </div>
+                                  <p className="text-base font-black text-rose-900">
+                                    {day.most_wickets.player_name}
+                                  </p>
+                                  <p className="text-[10px] text-rose-500">
+                                    Econ{" "}
+                                    {day.most_wickets.economy > 0 &&
+                                    day.most_wickets.economy < 999
+                                      ? day.most_wickets.economy.toFixed(1)
+                                      : "—"}
+                                  </p>
+                                </div>
+                                <span className="text-2xl font-black text-rose-700">
+                                  {day.most_wickets.wickets}
+                                </span>
                               </div>
                             ) : null,
                           ].filter(Boolean) as React.ReactElement[];
