@@ -404,7 +404,20 @@ export const reducer = (state: AppState, action: Action): AppState => {
 
   if (action.type !== 'RESET_MATCH') {
     const { past, ...stateWithoutPast } = state;
-    nextState.past = [...(past || []), stateWithoutPast];
+
+    // When bowler changes at end of over, skip the intermediate state so
+    // undo lands on before the last delivery (not the bowler-select prompt).
+    const inningsKey = state.matchState === 'innings1' ? 'innings1' : 'innings2';
+    const innings = state[inningsKey];
+    const isEndOfOverBowlerChange =
+      action.type === 'CHANGE_BOWLER' &&
+      !!innings &&
+      innings.balls > 0 &&
+      innings.balls % 6 === 0;
+
+    nextState.past = isEndOfOverBowlerChange
+      ? (past || [])
+      : [...(past || []), stateWithoutPast];
   } else {
     nextState.past = [];
   }

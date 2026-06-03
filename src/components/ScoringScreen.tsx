@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   ArrowUpDown,
   Share2,
+  ArrowLeftRight,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import Scorecard from "./Scorecard";
@@ -210,6 +211,7 @@ export default function ScoringScreen({
 
   // Next Bowler state
   const [nextBowlerId, setNextBowlerId] = useState<string>("");
+  const [isMidOverChange, setIsMidOverChange] = useState(false);
 
   if (!innings.strikerId || !innings.bowlerId) {
     return (
@@ -238,6 +240,14 @@ export default function ScoringScreen({
     innings.balls > 0 ? ((innings.runs / innings.balls) * 6).toFixed(1) : "0.0";
 
   const [lastOverPrompted, setLastOverPrompted] = useState(-1);
+  const prevBallsRef = useRef(innings.balls);
+
+  useEffect(() => {
+    if (innings.balls < prevBallsRef.current) {
+      setLastOverPrompted(Math.floor(innings.balls / 6) - 1);
+    }
+    prevBallsRef.current = innings.balls;
+  }, [innings.balls]);
 
   useEffect(() => {
     const currentOver = Math.floor(innings.balls / 6);
@@ -309,6 +319,7 @@ export default function ScoringScreen({
       dispatch({ type: "CHANGE_BOWLER", bowlerId: nextBowlerId });
       setShowBowlerModal(false);
       setNextBowlerId("");
+      setIsMidOverChange(false);
     }
   };
 
@@ -465,6 +476,16 @@ export default function ScoringScreen({
                   C
                 </span>
               )}
+              <button
+                onClick={() => {
+                  setIsMidOverChange(true);
+                  setShowBowlerModal(true);
+                }}
+                className="p-1 rounded-lg border border-indigo-300 text-indigo-500 hover:bg-indigo-50 transition-colors"
+                title="Change bowler"
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
           <div className="flex gap-3 font-mono text-center">
@@ -474,9 +495,7 @@ export default function ScoringScreen({
             </div>
             <div>
               <div className="text-[9px] text-slate-400">W</div>
-              <div className="font-bold text-base">
-                {bowler.wickets}
-              </div>
+              <div className="font-bold text-base">{bowler.wickets}</div>
             </div>
           </div>
         </div>
@@ -838,10 +857,12 @@ export default function ScoringScreen({
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="text-xl font-bold text-slate-800">
-                  End of Over
+                  {isMidOverChange ? "Change Bowler" : "End of Over"}
                 </h3>
                 <p className="text-slate-500 text-sm">
-                  Select the bowler for the next over.
+                  {isMidOverChange
+                    ? "Select a different bowler to continue."
+                    : "Select the bowler for the next over."}
                 </p>
               </div>
               <div className="text-right bg-indigo-50 rounded-2xl px-4 py-2">
@@ -889,13 +910,28 @@ export default function ScoringScreen({
               })}
             </div>
 
-            <button
-              onClick={handleNextBowler}
-              disabled={!nextBowlerId}
-              className="w-full py-4 rounded-xl font-semibold text-white bg-indigo-600 disabled:opacity-50 flex justify-center items-center gap-2"
-            >
-              Start Next Over <ChevronRight className="w-5 h-5" />
-            </button>
+            <div className={`flex gap-2 ${isMidOverChange ? "" : ""}`}>
+              {isMidOverChange && (
+                <button
+                  onClick={() => {
+                    setShowBowlerModal(false);
+                    setNextBowlerId("");
+                    setIsMidOverChange(false);
+                  }}
+                  className="flex-1 py-4 rounded-xl font-semibold text-slate-600 bg-slate-100"
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                onClick={handleNextBowler}
+                disabled={!nextBowlerId}
+                className="flex-1 py-4 rounded-xl font-semibold text-white bg-indigo-600 disabled:opacity-50 flex justify-center items-center gap-2"
+              >
+                {isMidOverChange ? "Confirm Change" : "Start Next Over"}
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
       )}
